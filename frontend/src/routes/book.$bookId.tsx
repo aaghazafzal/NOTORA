@@ -28,7 +28,7 @@ import type { Book } from "@/data/books";
 export const Route = createFileRoute("/book/$bookId")({
   loader: async ({ params }) => {
     // Attempt backend fetch first
-    let book = await fetch(`http://localhost:9090/api/books/${params.bookId}`)
+    let book = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:9090'}/api/books/${params.bookId}`)
       .then(r => r.json())
       .then(b => b.error ? null : {
         id: b._id,
@@ -193,7 +193,7 @@ function BookPage() {
   const { data: similarBooks = [] } = useQuery({
     queryKey: ['similar-books', book.genre, book.id],
     queryFn: async () => {
-      const res = await fetch(`http://localhost:9090/api/books?genres=${book.genre}&limit=12`);
+      const res = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:9090'}/api/books?genres=${book.genre}&limit=12`);
       if (!res.ok) return [];
       const data = await res.json();
       return data.books
@@ -263,7 +263,7 @@ function BookPage() {
               variant="outline"
               className="rounded-full shadow-sm hover:bg-secondary/50"
               onClick={() => {
-                window.location.href = `http://localhost:9090/api/download/${book.id}`;
+                window.location.href = `${import.meta.env.VITE_API_URL || 'http://localhost:9090'}/api/download/${book.id}`;
                 toast.success(`${book.title} download started`);
               }}
             >

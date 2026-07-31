@@ -37,7 +37,7 @@ export const Route = createFileRoute("/browse")({
 
 const fetchBooks = async ({ pageParam = 1, queryKey }: any) => {
   const [_key, q, genres, langs, tags] = queryKey;
-  const url = new URL("http://localhost:9090/api/books");
+  const url = new URL(`${import.meta.env.VITE_API_URL || 'http://localhost:9090'}/api/books`);
   
   if (q) url.searchParams.append("q", q);
   if (genres.length) url.searchParams.append("genres", genres.join(","));

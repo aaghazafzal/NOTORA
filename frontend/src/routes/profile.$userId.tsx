@@ -53,7 +53,7 @@ function ProfilePage() {
     queryKey: ['db-user', targetUser?.uid],
     queryFn: async () => {
       if (!targetUser?.uid) return null;
-      const res = await fetch(`http://localhost:9090/api/users/${targetUser.uid}`);
+      const res = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:9090'}/api/users/${targetUser.uid}`);
       if (!res.ok) return null; // fallback gracefully
       return res.json();
     },
@@ -75,7 +75,7 @@ function ProfilePage() {
     queryKey: ['user-books', targetUser?.uid],
     queryFn: async () => {
       if (!targetUser?.uid) return [];
-      const res = await fetch(`http://localhost:9090/api/books/user/${targetUser.uid}`);
+      const res = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:9090'}/api/books/user/${targetUser.uid}`);
       if (!res.ok) throw new Error("Failed to fetch user books");
       const data = await res.json();
       return data.map((b: any) => ({
@@ -108,7 +108,7 @@ function ProfilePage() {
       }
       
       const token = await targetUser.getIdToken();
-      const res = await fetch("http://localhost:9090/api/users/profile", {
+      const res = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:9090'}/api/users/profile`, {
         method: "PUT",
         headers: {
           Authorization: `Bearer ${token}`

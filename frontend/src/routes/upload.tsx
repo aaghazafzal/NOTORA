@@ -52,7 +52,7 @@ function UploadPage() {
   const { data: userBooks = [], isLoading: loadingBooks } = useQuery({
     queryKey: ['user-books', user?.uid],
     queryFn: async () => {
-      const res = await fetch(`http://localhost:9090/api/books?uploaderId=${user?.uid}`);
+      const res = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:9090'}/api/books?uploaderId=${user?.uid}`);
       if (!res.ok) throw new Error("Failed to fetch");
       const data = await res.json();
       if (!data || !Array.isArray(data.books)) {
@@ -108,7 +108,7 @@ function UploadPage() {
       const uploadId = Math.random().toString(36).substring(7);
       
       let telegramProgressActive = false;
-      const eventSource = new EventSource(`http://localhost:9090/api/upload/progress?uploadId=${uploadId}`);
+      const eventSource = new EventSource(`${import.meta.env.VITE_API_URL || 'http://localhost:9090'}/api/upload/progress?uploadId=${uploadId}`);
       eventSource.onmessage = (e) => {
         const data = JSON.parse(e.data);
         if (data.status === 'uploading_telegram') {
@@ -121,7 +121,7 @@ function UploadPage() {
       };
       
       const xhr = new XMLHttpRequest();
-      xhr.open("POST", `http://localhost:9090/api/upload?uploadId=${uploadId}`, true);
+      xhr.open("POST", `${import.meta.env.VITE_API_URL || 'http://localhost:9090'}/api/upload?uploadId=${uploadId}`, true);
       xhr.setRequestHeader("Authorization", `Bearer ${idToken}`);
 
       xhr.upload.onprogress = (event) => {

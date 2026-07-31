@@ -187,7 +187,7 @@ function HomePage() {
   const { data: realBooks = [], isLoading } = useQuery({
     queryKey: ['home-books'],
     queryFn: async () => {
-      const res = await fetch("http://localhost:9090/api/books");
+      const res = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:9090'}/api/books`);
       if (!res.ok) throw new Error("Failed to fetch");
       const data = await res.json();
       const booksArray = data.books || [];

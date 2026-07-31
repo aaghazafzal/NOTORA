@@ -37,7 +37,7 @@ const RealBookReader = lazy(() => import("@/components/RealBookReader"));
 
 export const Route = createFileRoute("/read/$bookId")({
   loader: async ({ params }) => {
-    let book = bookBySlug(params.bookId) || (await fetch(`http://localhost:9090/api/books/${params.bookId}`).then(r => r.json()).then(b => b.error ? null : {
+    let book = bookBySlug(params.bookId) || (await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:9090'}/api/books/${params.bookId}`).then(r => r.json()).then(b => b.error ? null : {
       id: b._id,
       slug: b._id,
       title: b.title,

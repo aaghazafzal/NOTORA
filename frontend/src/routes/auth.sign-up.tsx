@@ -97,7 +97,7 @@ function SignUpPage() {
       }
       
       const token = await authUser.getIdToken();
-      const res = await fetch("http://localhost:9090/api/users/profile", {
+      const res = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:9090'}/api/users/profile`, {
         method: "PUT",
         headers: {
           Authorization: `Bearer ${token}`

@@ -95,8 +95,8 @@ export default function RealBookReader({ book }: { book: any }) {
     }
   }, []);
 
-  const fileUrl = `http://localhost:9090/api/download/${book.id}?inline=true`;
-  const downloadUrl = `http://localhost:9090/api/download/${book.id}`;
+  const fileUrl = `${import.meta.env.VITE_API_URL || 'http://localhost:9090'}/api/download/${book.id}?inline=true`;
+  const downloadUrl = `${import.meta.env.VITE_API_URL || 'http://localhost:9090'}/api/download/${book.id}`;
 
   useEffect(() => {
     setPageInput(pageNumber.toString());

@@ -93,7 +93,7 @@ function LibraryPage() {
     queryKey: ['library', user?.uid],
     queryFn: async () => {
       const token = await user!.getIdToken();
-      const res = await fetch("http://localhost:9090/api/library", {
+      const res = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:9090'}/api/library`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (!res.ok) throw new Error("Failed to fetch library");
@@ -176,7 +176,7 @@ function LibraryPage() {
                 onClick={async () => {
                   if (newShelf.trim()) {
                     const token = await user!.getIdToken();
-                    await fetch("http://localhost:9090/api/library/shelves", {
+                    await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:9090'}/api/library/shelves`, {
                       method: "POST",
                       headers: { 
                         "Content-Type": "application/json",
