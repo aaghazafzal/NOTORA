@@ -1,0 +1,479 @@
+import { createFileRoute, Link, notFound } from "@tanstack/react-router";
+import {
+  Star,
+  BookOpen,
+  Download,
+  Heart,
+  Share2,
+  Plus,
+  Check,
+  ChevronLeft,
+  ChevronRight,
+  Compass,
+  ArrowRight
+} from "lucide-react";
+import { useRef, useState, useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { reviewsForBook } from "@/data/reviews";
+import { BookCard } from "@/components/BookCard";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { coverStyle } from "@/lib/cover";
+import { useAppStore } from "@/lib/store";
+import { toast } from "sonner";
+import type { Book } from "@/data/books";
+
+export const Route = createFileRoute("/book/$bookId")({
+  loader: async ({ params }) => {
+    // Attempt backend fetch first
+    let book = await fetch(`http://localhost:9090/api/books/${params.bookId}`)
+      .then(r => r.json())
+      .then(b => b.error ? null : {
+        id: b._id,
+        slug: b._id,
+        title: b.title,
+        authorId: b.uploaderId || "u_real",
+        authorName: b.author,
+        description: b.description,
+        genre: b.genre,
+        tags: b.tags || [],
+        language: b.language || "English",
+        isbn: "000-0000000000",
+        publishedYear: b.uploadDate ? new Date(b.uploadDate).getFullYear() : 2024,
+        pages: 300,
+        rating: 4.8,
+        ratingCount: 1500,
+        downloads: 120,
+        formats: ["pdf"],
+        chapters: [{ title: "Chapter 1", paragraphs: ["This is a preview..."] }],
+        coverUrl: b.coverUrl,
+      })
+      .catch(() => null);
+
+    if (!book) throw notFound();
+    return { book };
+  },
+  head: ({ loaderData }) => {
+    if (!loaderData) {
+      return {
+        meta: [
+          { title: "Book not found — LumenPages" },
+          { name: "robots", content: "noindex" },
+        ],
+      };
+    }
+    const b = loaderData.book;
+    const desc = b.description.slice(0, 160);
+    return {
+      meta: [
+        { title: `${b.title} by ${b.authorName} — LumenPages` },
+        { name: "description", content: desc },
+        { property: "og:title", content: `${b.title} — LumenPages` },
+        { property: "og:description", content: desc },
+        { property: "og:type", content: "book" },
+      ],
+    };
+  },
+  notFoundComponent: () => (
+    <div className="mx-auto max-w-md px-4 py-24 text-center">
+      <h1 className="font-display text-2xl font-bold">Book not found</h1>
+      <p className="mt-2 text-sm text-muted-foreground">
+        We couldn't find that title in the library.
+      </p>
+      <Button asChild className="mt-6 rounded-full neon-glow">
+        <Link to="/browse">Browse the library</Link>
+      </Button>
+    </div>
+  ),
+  errorComponent: ({ error, reset }) => (
+    <div className="mx-auto max-w-md px-4 py-24 text-center">
+      <h1 className="font-display text-2xl font-bold">Something broke</h1>
+      <p className="mt-2 text-sm text-muted-foreground">{error.message}</p>
+      <Button className="mt-6 rounded-full" onClick={reset}>
+        Try again
+      </Button>
+    </div>
+  ),
+  component: BookPage,
+});
+
+function SimilarBooksRow({ books, genre }: { books: Book[], genre: string }) {
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(true);
+
+  const checkScroll = () => {
+    if (scrollRef.current) {
+      const { scrollLeft, scrollWidth, clientWidth } = scrollRef.current;
+      setCanScrollLeft(scrollLeft > 0);
+      setCanScrollRight(Math.ceil(scrollLeft + clientWidth) < scrollWidth);
+    }
+  };
+
+  useEffect(() => {
+    checkScroll();
+    window.addEventListener('resize', checkScroll);
+    return () => window.removeEventListener('resize', checkScroll);
+  }, [books]);
+
+  const scroll = (direction: 'left' | 'right') => {
+    if (scrollRef.current) {
+      const scrollAmount = scrollRef.current.clientWidth * 0.8; 
+      scrollRef.current.scrollBy({
+        left: direction === 'left' ? -scrollAmount : scrollAmount,
+        behavior: 'smooth'
+      });
+    }
+  };
+
+  if (!books || books.length === 0) return null;
+
+  return (
+    <section className="mt-16 space-y-4 group/row">
+      <div className="flex items-end justify-between gap-4 mb-6">
+        <div className="min-w-0">
+          <div className="flex items-center gap-2 text-primary">
+            <Compass className="h-4 w-4" />
+            <span className="text-xs font-semibold uppercase tracking-wider">
+              {genre}
+            </span>
+          </div>
+          <h2 className="mt-1 truncate font-display text-2xl font-bold">
+            Similar Books
+          </h2>
+        </div>
+      </div>
+      
+      <div className="relative">
+        {canScrollLeft && (
+          <Button
+            variant="secondary"
+            size="icon"
+            className="absolute -left-5 top-1/2 -translate-y-1/2 z-10 hidden md:flex opacity-0 group-hover/row:opacity-100 transition-opacity rounded-full shadow-lg border border-border"
+            onClick={() => scroll('left')}
+          >
+            <ChevronLeft className="h-5 w-5" />
+          </Button>
+        )}
+        
+        <div 
+          ref={scrollRef}
+          onScroll={checkScroll}
+          className="-mx-4 flex snap-x snap-mandatory gap-4 overflow-x-auto px-4 pb-2 sm:mx-0 sm:px-0 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden scroll-smooth"
+        >
+          {books.map((b) => (
+            <div key={b.id} className="snap-start flex-shrink-0 w-[140px] sm:w-[160px] md:w-[180px]">
+              <BookCard book={b} />
+            </div>
+          ))}
+        </div>
+
+        {canScrollRight && (
+          <Button
+            variant="secondary"
+            size="icon"
+            className="absolute -right-5 top-1/2 -translate-y-1/2 z-10 hidden md:flex opacity-0 group-hover/row:opacity-100 transition-opacity rounded-full shadow-lg border border-border"
+            onClick={() => scroll('right')}
+          >
+            <ChevronRight className="h-5 w-5" />
+          </Button>
+        )}
+      </div>
+    </section>
+  );
+}
+
+function BookPage() {
+  const { book } = Route.useLoaderData();
+  const reviews = reviewsForBook(book.id);
+
+  // Fetch similar books
+  const { data: similarBooks = [] } = useQuery({
+    queryKey: ['similar-books', book.genre, book.id],
+    queryFn: async () => {
+      const res = await fetch(`http://localhost:9090/api/books?genres=${book.genre}&limit=12`);
+      if (!res.ok) return [];
+      const data = await res.json();
+      return data.books
+        .filter((b: any) => b._id !== book.id)
+        .map((b: any) => ({
+          id: b._id,
+          slug: b._id,
+          title: b.title,
+          authorId: b.uploaderId || "u_real",
+          authorName: b.author,
+          description: b.description,
+          genre: b.genre,
+          tags: b.tags || [],
+          language: b.language || "English",
+          isbn: "000-0000000000",
+          publishedYear: b.uploadDate ? new Date(b.uploadDate).getFullYear() : 2024,
+          pages: 300,
+          rating: 4.8,
+          ratingCount: 1500,
+          downloads: 120,
+          formats: ["pdf"],
+          chapters: [],
+          coverUrl: b.coverUrl,
+        }));
+    }
+  });
+
+  const favorites = useAppStore((s) => s.shelves.favorites);
+  const toggleShelf = useAppStore((s) => s.toggleShelf);
+  const isFav = favorites.includes(book.id);
+
+  return (
+    <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 sm:py-10 animate-in fade-in duration-500">
+      <div className="grid gap-8 md:grid-cols-[240px_1fr] lg:grid-cols-[280px_1fr]">
+        
+        {/* Left Column: Cover & Actions */}
+        <div>
+          <div
+            className="aspect-[2/3] w-full overflow-hidden rounded-2xl shadow-2xl ring-1 ring-border/50 relative group transition-transform duration-300 hover:scale-[1.02]"
+            style={(book as any).coverUrl ? { backgroundImage: `url(${(book as any).coverUrl})`, backgroundSize: 'cover', backgroundPosition: 'center' } : coverStyle(book.id)}
+          >
+            {/* Enhanced Theme-responsive Gradient Overlays */}
+            <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-background/95 via-background/20 to-transparent" />
+            
+            <div className="relative flex h-full flex-col justify-between p-5">
+              <div className="text-[11px] font-semibold uppercase tracking-wider text-foreground/80 drop-shadow-md">
+                {book.genre}
+              </div>
+              <div>
+                <div className="font-display text-xl font-bold leading-tight text-foreground drop-shadow-md">
+                  {book.title}
+                </div>
+                <div className="mt-1 text-sm text-foreground/80 drop-shadow-md">
+                  {book.authorName}
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <div className="mt-6 grid grid-cols-2 gap-3">
+            <Button asChild className="neon-glow rounded-full shadow-lg">
+              <Link to="/read/$bookId" params={{ bookId: book.slug }}>
+                <BookOpen className="mr-2 h-4 w-4" /> Read
+              </Link>
+            </Button>
+            <Button
+              variant="outline"
+              className="rounded-full shadow-sm hover:bg-secondary/50"
+              onClick={() => {
+                window.location.href = `http://localhost:9090/api/download/${book.id}`;
+                toast.success(`${book.title} download started`);
+              }}
+            >
+              <Download className="mr-2 h-4 w-4" /> Download
+            </Button>
+            <Button
+              variant={isFav ? "default" : "outline"}
+              className={`rounded-full shadow-sm ${isFav ? "neon-glow bg-red-500 hover:bg-red-600 text-white" : "hover:bg-secondary/50"}`}
+              onClick={() => {
+                toggleShelf("favorites", book.id);
+                toast.success(
+                  isFav ? "Removed from favorites" : "Added to favorites"
+                );
+              }}
+            >
+              {isFav ? (
+                <>
+                  <Heart className="mr-2 h-4 w-4 fill-current" /> Favorited
+                </>
+              ) : (
+                <>
+                  <Heart className="mr-2 h-4 w-4" /> Favorite
+                </>
+              )}
+            </Button>
+            <Button
+              variant="outline"
+              className="rounded-full shadow-sm hover:bg-secondary/50"
+              onClick={() => {
+                if (typeof navigator !== "undefined" && navigator.clipboard) {
+                  navigator.clipboard.writeText(window.location.href);
+                }
+                toast.success("Link copied to clipboard");
+              }}
+            >
+              <Share2 className="mr-2 h-4 w-4" /> Share
+            </Button>
+          </div>
+        </div>
+
+        {/* Right Column: Details */}
+        <div className="min-w-0">
+          <p className="text-sm text-muted-foreground">
+            by{" "}
+            <Link
+              to="/profile/$userId"
+              params={{ userId: book.authorId }}
+              className="font-medium text-primary hover:underline"
+            >
+              {book.authorName}
+            </Link>
+          </p>
+          <h1 className="mt-2 font-display text-4xl font-black leading-tight sm:text-5xl lg:text-6xl text-foreground">
+            {book.title}
+          </h1>
+          
+          <div className="mt-4 flex flex-wrap items-center gap-3 text-sm">
+            <div className="flex items-center gap-1.5 bg-accent/10 text-accent px-2 py-1 rounded-full">
+              <Star className="h-4 w-4 fill-current" />
+              <span className="font-bold">{book.rating.toFixed(1)}</span>
+            </div>
+            <span className="text-muted-foreground">
+              ({book.ratingCount.toLocaleString()} ratings)
+            </span>
+            <span className="text-border mx-1">•</span>
+            <span className="text-muted-foreground font-medium">{book.pages} pages</span>
+            <span className="text-border mx-1">•</span>
+            <span className="text-muted-foreground font-medium">
+              {book.language} · {book.publishedYear}
+            </span>
+          </div>
+          
+          <div className="mt-6 flex flex-wrap gap-2">
+            <Badge variant="secondary" className="px-3 py-1 bg-primary/10 text-primary border-transparent">
+              {book.genre}
+            </Badge>
+            {book.tags.map((t: string) => (
+              <Badge key={t} variant="outline" className="px-3 py-1 bg-background/50">
+                {t}
+              </Badge>
+            ))}
+          </div>
+
+          <Tabs defaultValue="about" className="mt-10">
+            <TabsList className="bg-transparent border-b border-border rounded-none p-0 w-full justify-start overflow-x-auto flex-nowrap hide-scrollbar">
+              <TabsTrigger 
+                value="about" 
+                className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:text-foreground text-muted-foreground px-6 py-3 font-medium"
+              >
+                About
+              </TabsTrigger>
+              <TabsTrigger 
+                value="reviews" 
+                className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:text-foreground text-muted-foreground px-6 py-3 font-medium"
+              >
+                Reviews ({reviews.length})
+              </TabsTrigger>
+              <TabsTrigger 
+                value="details" 
+                className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:text-foreground text-muted-foreground px-6 py-3 font-medium"
+              >
+                Details
+              </TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="about" className="mt-6 animate-in fade-in slide-in-from-bottom-2 duration-500">
+              <p className="text-base leading-relaxed text-foreground/90 whitespace-pre-wrap">
+                {book.description}
+              </p>
+              <div className="mt-8">
+                <h3 className="font-display text-sm font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
+                  <BookOpen className="w-4 h-4" /> Preview
+                </h3>
+                <div className="mt-3 rounded-2xl border border-border bg-card/50 p-6 shadow-sm hover:shadow-md transition-shadow">
+                  <p className="text-sm italic leading-relaxed text-foreground/85">
+                    {book.chapters[0]?.paragraphs[0] || "No preview available for this book."}
+                  </p>
+                  <Button asChild variant="link" className="mt-4 px-0 text-primary font-semibold group">
+                    <Link to="/read/$bookId" params={{ bookId: book.slug }}>
+                      Continue reading <ArrowRight className="ml-1 w-4 h-4 transition-transform group-hover:translate-x-1" />
+                    </Link>
+                  </Button>
+                </div>
+              </div>
+            </TabsContent>
+            
+            <TabsContent value="reviews" className="mt-6 space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-500">
+              {reviews.length === 0 && (
+                <div className="p-8 text-center rounded-2xl border border-dashed border-border bg-card/50">
+                  <p className="text-muted-foreground">
+                    No reviews yet. Be the first to share your thoughts!
+                  </p>
+                </div>
+              )}
+              {reviews.map((r) => (
+                <article
+                  key={r.id}
+                  className="rounded-2xl border border-border bg-card/50 p-5 hover:bg-card transition-colors shadow-sm"
+                >
+                  <header className="flex items-center gap-3">
+                    <Avatar className="h-10 w-10 ring-2 ring-background">
+                      <AvatarFallback className="bg-primary/10 text-primary font-bold">{r.userName.slice(0, 1)}</AvatarFallback>
+                    </Avatar>
+                    <div className="min-w-0">
+                      <div className="text-sm font-semibold">{r.userName}</div>
+                      <div className="text-xs text-muted-foreground">
+                        {r.createdAt}
+                      </div>
+                    </div>
+                    <div className="ml-auto flex items-center gap-0.5 text-accent">
+                      {Array.from({ length: 5 }).map((_, i) => (
+                        <Star
+                          key={i}
+                          className={`h-4 w-4 ${
+                            i < r.rating ? "fill-current drop-shadow-sm" : "opacity-20"
+                          }`}
+                        />
+                      ))}
+                    </div>
+                  </header>
+                  <h4 className="mt-4 font-display font-semibold">{r.title}</h4>
+                  <p className="mt-2 text-sm text-foreground/85 leading-relaxed">{r.body}</p>
+                </article>
+              ))}
+              <Button variant="outline" className="w-full rounded-xl border-dashed h-12 mt-4 hover:bg-secondary/50 hover:text-primary">
+                <Plus className="mr-2 h-4 w-4" /> Write a review
+              </Button>
+            </TabsContent>
+            
+            <TabsContent value="details" className="mt-6 animate-in fade-in slide-in-from-bottom-2 duration-500">
+              <div className="rounded-2xl border border-border bg-card/50 p-6 shadow-sm">
+                <dl className="grid grid-cols-1 gap-6 text-sm sm:grid-cols-2 lg:grid-cols-3">
+                  <div>
+                    <dt className="text-muted-foreground mb-1">ISBN</dt>
+                    <dd className="font-semibold text-foreground">{book.isbn}</dd>
+                  </div>
+                  <div>
+                    <dt className="text-muted-foreground mb-1">Published</dt>
+                    <dd className="font-semibold text-foreground">{book.publishedYear}</dd>
+                  </div>
+                  <div>
+                    <dt className="text-muted-foreground mb-1">Language</dt>
+                    <dd className="font-semibold text-foreground">{book.language}</dd>
+                  </div>
+                  <div>
+                    <dt className="text-muted-foreground mb-1">Pages</dt>
+                    <dd className="font-semibold text-foreground">{book.pages}</dd>
+                  </div>
+                  <div>
+                    <dt className="text-muted-foreground mb-1">Formats</dt>
+                    <dd className="font-semibold text-foreground uppercase">
+                      {book.formats.join(", ")}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt className="text-muted-foreground mb-1">Downloads</dt>
+                    <dd className="font-semibold text-foreground">
+                      {book.downloads.toLocaleString()}
+                    </dd>
+                  </div>
+                </dl>
+              </div>
+            </TabsContent>
+          </Tabs>
+        </div>
+      </div>
+
+      {similarBooks.length > 0 && (
+        <SimilarBooksRow books={similarBooks} genre={book.genre} />
+      )}
+    </div>
+  );
+}
