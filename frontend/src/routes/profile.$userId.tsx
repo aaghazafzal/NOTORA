@@ -118,6 +118,18 @@ function ProfilePage() {
       
       if (!res.ok) throw new Error("Failed to update profile");
       
+      const data = await res.json();
+      
+      // SYNC WITH FIREBASE AUTH SO IT PERSISTS ACROSS LOGOUT/LOGIN
+      const { updateProfile } = await import("firebase/auth");
+      await updateProfile(targetUser, {
+        displayName: data.user.name || targetUser.displayName,
+        photoURL: data.user.photoUrl || targetUser.photoURL
+      });
+      
+      // Force update the Zustand store to trigger TopBar re-render immediately
+      useAuthStore.getState().setUser(Object.assign({}, targetUser));
+      
       await refetchUser();
       setIsEditing(false);
       toast.success("Profile updated successfully!");
