@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { BookOpen, Loader2, Camera, Check } from "lucide-react";
+import { BookOpen, Loader2, Camera, Check, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -175,8 +175,31 @@ function SignUpPage() {
       </div>
 
       {/* Right Panel - Form (Mobile & Desktop) */}
-      <div className="flex items-center justify-center bg-background p-6 sm:p-12 lg:p-16">
-        <div className="w-full max-w-sm sm:max-w-md">
+      <div className="flex items-center justify-center bg-background p-6 sm:p-12 lg:p-16 relative">
+        <Button 
+          asChild
+          variant="ghost" 
+          className="absolute left-4 top-4 sm:left-8 sm:top-8 gap-2 text-muted-foreground hover:text-foreground hidden lg:flex"
+        >
+          <Link to="/">
+            <ArrowLeft className="h-4 w-4" />
+            <span>Back to home</span>
+          </Link>
+        </Button>
+
+        <Button 
+          asChild
+          variant="ghost" 
+          size="icon"
+          className="absolute left-4 top-4 text-muted-foreground hover:text-foreground lg:hidden"
+        >
+          <Link to="/">
+            <ArrowLeft className="h-5 w-5" />
+            <span className="sr-only">Back</span>
+          </Link>
+        </Button>
+
+        <div className="w-full max-w-sm sm:max-w-md mt-8 lg:mt-0">
           {/* Mobile Header (Hidden on Desktop) */}
           <Link to="/" className="mb-10 flex items-center justify-center gap-2 lg:hidden">
             <div className="grid h-10 w-10 place-items-center rounded-xl bg-gradient-to-br from-primary to-secondary neon-glow">
