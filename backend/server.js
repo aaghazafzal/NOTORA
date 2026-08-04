@@ -23,7 +23,7 @@ app.use(express.json());
 
 const limiter = rateLimit({
     windowMs: 15 * 60 * 1000, 
-    max: 100, 
+    max: 2000, 
     message: 'Too many requests, please try again later.'
 });
 app.use('/api/', limiter);
@@ -576,6 +576,22 @@ app.put('/api/users/profile', verifyToken, upload.single('photo'), async (req, r
         res.status(500).json({ error: 'Failed to update profile' });
     }
 });
+
+
+app.get('/api/ping', (req, res) => {
+    res.json({ status: 'ok', time: new Date().toISOString() });
+});
+
+// Self-ping to prevent Render sleeping on free tier
+const pingInterval = 8 * 60 * 1000; // 8 minutes
+setInterval(() => {
+    // RENDER_EXTERNAL_URL is automatically provided by Render
+    const backendUrl = process.env.RENDER_EXTERNAL_URL || `http://localhost:${process.env.PORT || 9090}`;
+    fetch(`${backendUrl}/api/ping`)
+        .then(res => res.json())
+        .then(data => console.log('Self-ping success:', data.time))
+        .catch(err => console.error('Self-ping failed:', err.message));
+}, pingInterval);
 
 
 const PORT = process.env.PORT || 9090;
