@@ -11,7 +11,7 @@ const items: {
   { to: "/browse", label: "Browse", icon: Search },
   { to: "/library", label: "Library", icon: Library },
   { to: "/upload", label: "Upload", icon: Upload },
-  { to: "/profile/u_maya", label: "Profile", icon: User },
+  { to: "/profile/me", label: "Profile", icon: User },
 ];
 
 export function BottomNav() {

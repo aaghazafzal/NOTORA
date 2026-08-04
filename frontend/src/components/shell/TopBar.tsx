@@ -144,7 +144,7 @@ export function TopBar() {
                 aria-label="Account menu"
               >
                 <Avatar className="h-8 w-8">
-                  <AvatarImage src={user.photoURL || undefined} />
+                  <AvatarImage src={user.photoURL || undefined} className="object-cover" />
                   <AvatarFallback className="bg-secondary text-secondary-foreground">
                     {user.displayName ? user.displayName.slice(0, 1).toUpperCase() : user.email?.slice(0, 1).toUpperCase()}
                   </AvatarFallback>
@@ -155,7 +155,7 @@ export function TopBar() {
               <DropdownMenuLabel>{user.displayName || user.email}</DropdownMenuLabel>
               <DropdownMenuSeparator />
               <DropdownMenuItem asChild>
-                <Link to="/profile/$userId" params={{ userId: user.uid }}>
+                <Link to="/profile/$userId" params={{ userId: "me" }}>
                   Profile
                 </Link>
               </DropdownMenuItem>
