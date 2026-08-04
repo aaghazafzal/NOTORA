@@ -28,16 +28,12 @@ export const Route = createFileRoute("/")({
   component: HomePage,
 });
 
-function RowSkeleton({ titleIcon: Icon, subtitle }: { titleIcon: any, subtitle: string }) {
+function RowSkeleton() {
   return (
-    <section className="space-y-4">
+    <section className="space-y-3">
       <div className="flex items-end justify-between gap-4">
         <div className="min-w-0">
-          <div className="flex items-center gap-2 text-primary">
-            <Icon className="h-4 w-4" />
-            <span className="text-xs font-semibold uppercase tracking-wider">{subtitle}</span>
-          </div>
-          <Skeleton className="mt-2 h-8 w-48 rounded-lg" />
+          <Skeleton className="h-8 w-48 rounded-lg" />
         </div>
       </div>
       <div className="flex gap-4 overflow-hidden">
@@ -58,10 +54,6 @@ function HeroSkeleton() {
     <section className="grain-overlay relative overflow-hidden rounded-3xl border border-border bg-gradient-to-br from-card to-muted p-6 sm:p-10">
       <div className="grid gap-8 md:grid-cols-[1fr_auto] md:items-center">
         <div className="min-w-0 space-y-4">
-          <div className="flex items-center gap-2 text-primary">
-            <Sparkles className="h-4 w-4" />
-            <span className="text-xs font-semibold uppercase tracking-wider">Latest Upload</span>
-          </div>
           <Skeleton className="h-12 md:h-16 w-3/4 rounded-xl" />
           <Skeleton className="h-5 w-1/2 rounded-lg" />
           <div className="space-y-2 mt-4">
@@ -84,13 +76,9 @@ function HeroSkeleton() {
 
 function Row({
   title,
-  subtitle,
-  icon: Icon,
   books,
 }: {
   title: string;
-  subtitle?: string;
-  icon: typeof Sparkles;
   books: Book[];
 }) {
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -123,16 +111,10 @@ function Row({
 
   if (!books || books.length === 0) return null;
   return (
-    <section className="space-y-4 group/row">
+    <section className="space-y-3 group/row">
       <div className="flex items-end justify-between gap-4">
         <div className="min-w-0">
-          <div className="flex items-center gap-2 text-primary">
-            <Icon className="h-4 w-4" />
-            <span className="text-xs font-semibold uppercase tracking-wider">
-              {subtitle ?? "Curated"}
-            </span>
-          </div>
-          <h2 className="mt-1 truncate font-display text-2xl font-bold">
+          <h2 className="truncate font-display text-2xl font-bold">
             {title}
           </h2>
         </div>
@@ -159,7 +141,7 @@ function Row({
         <div 
           ref={scrollRef}
           onScroll={checkScroll}
-          className="-mx-4 flex snap-x snap-mandatory gap-4 overflow-x-auto px-4 pb-2 sm:mx-0 sm:px-0 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden scroll-smooth"
+          className="-mx-6 flex snap-x snap-mandatory gap-4 overflow-x-auto px-6 pb-2 sm:mx-0 sm:px-0 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden scroll-smooth"
         >
           {books.map((b) => (
             <div key={b.id} className="snap-start flex-shrink-0 w-[140px] sm:w-[160px] md:w-[180px]">
@@ -218,10 +200,10 @@ function HomePage() {
 
   if (isLoading) {
     return (
-      <div className="mx-auto w-full max-w-[1600px] space-y-8 md:space-y-10 px-4 py-6 sm:px-6 md:px-8 xl:px-12 sm:py-10">
+      <div className="mx-auto w-full max-w-[1600px] space-y-4 md:space-y-6 px-6 py-4 sm:px-6 md:px-8 xl:px-12 sm:py-8">
         <HeroSkeleton />
-        <RowSkeleton titleIcon={TrendingUp} subtitle="Trending" />
-        <RowSkeleton titleIcon={Compass} subtitle="Discover" />
+        <RowSkeleton />
+        <RowSkeleton />
       </div>
     );
   }
@@ -233,19 +215,13 @@ function HomePage() {
   const allGenres = Array.from(new Set(realBooks.map((b) => b.genre))).filter(Boolean);
 
   return (
-    <div className="mx-auto w-full max-w-[1600px] space-y-8 md:space-y-10 px-4 py-6 sm:px-6 md:px-8 xl:px-12 sm:py-10">
+    <div className="mx-auto w-full max-w-[1600px] space-y-5 md:space-y-8 px-6 py-4 sm:px-6 md:px-8 xl:px-12 sm:py-8">
       {/* Hero */}
       {hero && (
         <section className="grain-overlay relative overflow-hidden rounded-3xl border border-border bg-gradient-to-br from-card to-muted p-6 sm:p-10">
           <div className="grid grid-cols-[1fr_auto] gap-4 md:gap-8 items-center">
             <div className="min-w-0">
-              <div className="flex items-center gap-2 text-primary">
-                <Sparkles className="h-4 w-4" />
-                <span className="text-xs font-semibold uppercase tracking-wider">
-                  Latest Upload
-                </span>
-              </div>
-              <h1 className="mt-3 font-display text-3xl font-black leading-tight sm:text-5xl lg:text-6xl">
+              <h1 className="font-display text-3xl font-black leading-tight sm:text-5xl lg:text-6xl">
                 {hero.title}
               </h1>
               <p className="mt-2 text-sm text-muted-foreground sm:text-base lg:text-lg">
@@ -299,8 +275,6 @@ function HomePage() {
       {trending.length > 0 && (
         <Row
           title="Trending Now"
-          subtitle="Hot"
-          icon={TrendingUp}
           books={trending}
         />
       )}
@@ -308,8 +282,6 @@ function HomePage() {
       {newReleases.length > 0 && (
         <Row
           title="New Arrivals"
-          subtitle="Fresh"
-          icon={Sparkles}
           books={newReleases}
         />
       )}
@@ -323,8 +295,6 @@ function HomePage() {
           <Row
             key={genre}
             title={genre}
-            subtitle="Genre"
-            icon={Compass}
             books={booksInGenre}
           />
         );
