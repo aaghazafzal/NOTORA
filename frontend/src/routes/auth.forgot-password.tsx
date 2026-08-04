@@ -40,7 +40,7 @@ function ForgotPasswordPage() {
   return (
     <div className="grid min-h-screen lg:grid-cols-2">
       {/* Left Panel - Branding (Desktop Only) */}
-      <div className="hidden lg:flex flex-col justify-between bg-zinc-950 p-12 relative overflow-hidden">
+      <div className="hidden lg:flex flex-col justify-between bg-muted/30 border-r border-border p-12 relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-primary/20 via-transparent to-secondary/20 opacity-50 mix-blend-screen" />
         <div className="absolute -left-1/4 -top-1/4 h-[800px] w-[800px] rounded-full bg-primary/20 blur-[120px]" />
         
@@ -48,19 +48,19 @@ function ForgotPasswordPage() {
           <div className="grid h-12 w-12 place-items-center rounded-2xl bg-gradient-to-br from-primary to-secondary shadow-lg">
             <BookOpen className="h-6 w-6 text-primary-foreground" />
           </div>
-          <span className="font-display text-3xl font-black text-white">LumenPages</span>
+          <span className="font-display text-3xl font-black text-foreground">LumenPages</span>
         </div>
         
         <div className="relative z-10 max-w-lg">
-          <h2 className="font-display text-4xl font-bold leading-tight text-white lg:text-5xl">
+          <h2 className="font-display text-4xl font-bold leading-tight text-foreground lg:text-5xl">
             Regain access to your library.
           </h2>
-          <p className="mt-6 text-lg text-zinc-400">
+          <p className="mt-6 text-lg text-muted-foreground">
             Don't worry, it happens to the best of us. We'll get you back to your reading in no time.
           </p>
         </div>
         
-        <div className="relative z-10 text-sm text-zinc-500">
+        <div className="relative z-10 text-sm text-muted-foreground">
           © {new Date().getFullYear()} LumenPages. All rights reserved.
         </div>
       </div>
