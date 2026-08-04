@@ -14,6 +14,16 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
   Sheet,
   SheetContent,
   SheetHeader,
@@ -28,6 +38,7 @@ import { signOut } from "firebase/auth";
 
 export function TopBar() {
   const [q, setQ] = useState("");
+  const [showSignOutDialog, setShowSignOutDialog] = useState(false);
   const navigate = useNavigate();
   const { user, loading } = useAuthStore();
   const unread = NOTIFICATIONS.filter((n) => !n.read).length;
@@ -166,7 +177,13 @@ export function TopBar() {
                 <Link to="/settings">Settings</Link>
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={handleSignOut} className="text-red-500 focus:text-red-500 cursor-pointer">
+              <DropdownMenuItem 
+                onSelect={(e) => {
+                  e.preventDefault();
+                  setShowSignOutDialog(true);
+                }} 
+                className="text-red-500 focus:text-red-500 cursor-pointer"
+              >
                 Sign out
               </DropdownMenuItem>
             </DropdownMenuContent>
@@ -181,6 +198,24 @@ export function TopBar() {
             </Button>
           </div>
         )}
+        
+        {/* Sign Out Confirmation Dialog */}
+        <AlertDialog open={showSignOutDialog} onOpenChange={setShowSignOutDialog}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Sign out</AlertDialogTitle>
+              <AlertDialogDescription>
+                Are you sure you want to sign out? You will need to sign in again to access your library and profile.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction onClick={handleSignOut} className="bg-red-500 hover:bg-red-600 text-white">
+                Sign out
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </header>
   );
