@@ -111,7 +111,7 @@ function Row({
 
   if (!books || books.length === 0) return null;
   return (
-    <section className="space-y-3 group/row">
+    <section className="space-y-2 group/row relative">
       <div className="flex items-end justify-between gap-4">
         <div className="min-w-0">
           <h2 className="truncate font-display text-2xl font-bold">
@@ -141,13 +141,15 @@ function Row({
         <div 
           ref={scrollRef}
           onScroll={checkScroll}
-          className="-mx-6 flex snap-x snap-mandatory gap-4 overflow-x-auto px-6 pb-2 sm:mx-0 sm:px-0 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden scroll-smooth"
+          className="-mx-6 flex snap-x snap-mandatory gap-4 overflow-x-auto pb-1 sm:mx-0 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden scroll-smooth"
         >
+          <div className="w-2 shrink-0 sm:hidden" aria-hidden="true" />
           {books.map((b) => (
             <div key={b.id} className="snap-start flex-shrink-0 w-[140px] sm:w-[160px] md:w-[180px]">
               <BookCard book={b} />
             </div>
           ))}
+          <div className="w-2 shrink-0 sm:hidden" aria-hidden="true" />
         </div>
 
         {canScrollRight && (
