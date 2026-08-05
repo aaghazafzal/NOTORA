@@ -343,7 +343,20 @@ function SignUpPage() {
                       </div>
                       <input id="photo" type="file" accept="image/*" className="hidden" onChange={handlePhotoSelect} />
                     </Label>
-                    <p className="text-xs text-muted-foreground font-medium">Add a profile photo</p>
+                    {photoPreview ? (
+                      <button 
+                        type="button" 
+                        onClick={() => {
+                          setPhotoFile(null);
+                          setPhotoPreview("");
+                        }}
+                        className="text-xs text-destructive hover:underline font-medium"
+                      >
+                        Click to remove photo
+                      </button>
+                    ) : (
+                      <p className="text-xs text-muted-foreground font-medium">Add a profile photo</p>
+                    )}
                   </div>
 
                   <div className="space-y-1.5">

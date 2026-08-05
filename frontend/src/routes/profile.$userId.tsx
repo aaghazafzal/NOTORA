@@ -108,6 +108,8 @@ function ProfilePage() {
       formData.append("bio", editBio);
       if (editPhoto) {
         formData.append("photo", editPhoto);
+      } else if (!editPreview) {
+        formData.append("removePhoto", "true");
       }
       
       const token = await targetUser.getIdToken();
@@ -125,10 +127,15 @@ function ProfilePage() {
       
       // SYNC WITH FIREBASE AUTH SO IT PERSISTS ACROSS LOGOUT/LOGIN
       const { updateProfile } = await import("firebase/auth");
-      await updateProfile(targetUser, {
-        displayName: data.user.name || targetUser.displayName,
-        photoURL: data.user.photoUrl || targetUser.photoURL
-      });
+      const updateData: any = {
+        displayName: data.user.name || targetUser.displayName
+      };
+      if (!editPreview && !editPhoto) {
+        updateData.photoURL = "";
+      } else {
+        updateData.photoURL = data.user.photoUrl || targetUser.photoURL;
+      }
+      await updateProfile(targetUser, updateData);
       
       // Force update the Zustand store to trigger TopBar re-render immediately
       useAuthStore.getState().setUser(Object.assign({}, targetUser));
@@ -236,7 +243,20 @@ function ProfilePage() {
                         </div>
                         <input id="photo" type="file" accept="image/*" className="hidden" onChange={handlePhotoSelect} />
                       </Label>
-                      <p className="text-xs text-muted-foreground">Click to change photo</p>
+                      {editPreview ? (
+                        <button 
+                          type="button" 
+                          onClick={() => {
+                            setEditPhoto(null);
+                            setEditPreview("");
+                          }}
+                          className="text-xs text-destructive hover:underline font-medium"
+                        >
+                          Click to remove photo
+                        </button>
+                      ) : (
+                        <p className="text-xs text-muted-foreground">Click to add photo</p>
+                      )}
                     </div>
 
                     <div className="space-y-2">

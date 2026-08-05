@@ -540,6 +540,19 @@ app.put('/api/users/profile', verifyToken, upload.single('photo'), async (req, r
         if (name) user.name = name;
         if (bio !== undefined) user.bio = bio;
 
+        if (req.body.removePhoto === 'true') {
+            if (user.photoUrl && user.photoUrl.includes('r2.dev/avatars/')) {
+                try {
+                    const oldKey = user.photoUrl.split('r2.dev/')[1];
+                    await s3.send(new DeleteObjectCommand({ Bucket: 'notora', Key: oldKey }));
+                    console.log('Old photo deleted via removePhoto:', oldKey);
+                } catch (e) {
+                    console.error('Failed to delete old photo:', e);
+                }
+            }
+            user.photoUrl = "";
+        }
+
         if (req.file) {
             const photoExt = path.extname(req.file.originalname);
             const photoKey = `avatars/${Date.now()}-${Math.round(Math.random()*1000)}${photoExt}`;
