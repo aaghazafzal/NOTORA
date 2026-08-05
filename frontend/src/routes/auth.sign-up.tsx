@@ -10,6 +10,7 @@ import { auth, googleProvider, getFirebaseErrorMessage } from "@/lib/firebase";
 import { createUserWithEmailAndPassword, signInWithPopup, updateProfile, User } from "firebase/auth";
 import { toast } from "sonner";
 import { useAuthStore } from "@/store/useAuthStore";
+import { ImageCropperModal } from "@/components/ui/image-cropper";
 
 export const Route = createFileRoute("/auth/sign-up")({
   head: () => ({
@@ -56,6 +57,8 @@ function SignUpPage() {
   const [bio, setBio] = useState("");
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [photoPreview, setPhotoPreview] = useState("");
+  const [cropperOpen, setCropperOpen] = useState(false);
+  const [cropperSrc, setCropperSrc] = useState("");
   
   const [isLoading, setIsLoading] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
@@ -107,9 +110,15 @@ function SignUpPage() {
   const handlePhotoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
-      setPhotoFile(file);
-      setPhotoPreview(URL.createObjectURL(file));
+      setCropperSrc(URL.createObjectURL(file));
+      setCropperOpen(true);
+      e.target.value = "";
     }
+  };
+
+  const handleCropComplete = (croppedFile: File) => {
+    setPhotoFile(croppedFile);
+    setPhotoPreview(URL.createObjectURL(croppedFile));
   };
 
   const handleCompleteProfile = async (e: React.FormEvent) => {
@@ -368,6 +377,12 @@ function SignUpPage() {
                     )}
                   </Button>
                 </form>
+                <ImageCropperModal
+                  isOpen={cropperOpen}
+                  onClose={() => setCropperOpen(false)}
+                  imageSrc={cropperSrc}
+                  onCropComplete={handleCropComplete}
+                />
               </div>
             )}
           </div>
