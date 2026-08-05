@@ -10,6 +10,7 @@ const bookSchema = new mongoose.Schema({
     genre: { type: String, required: true },
     tags: [{ type: String }],
     language: { type: String, default: 'English' },
+    pages: { type: Number },
     telegramPrimaryMsgId: { type: Number, required: true },
     telegramBackupMsgId: { type: Number },
     uploaderId: { type: String }, // Firebase UID of the user who uploaded this book

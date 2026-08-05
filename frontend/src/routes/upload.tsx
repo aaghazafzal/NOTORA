@@ -13,6 +13,10 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { BookCard } from "@/components/BookCard";
 import { Badge } from "@/components/ui/badge";
 import { coverStyle } from "@/lib/cover";
+import * as pdfjsLib from 'pdfjs-dist';
+import workerSrc from "pdfjs-dist/build/pdf.worker.min.mjs?url";
+
+pdfjsLib.GlobalWorkerOptions.workerSrc = workerSrc;
 
 export const Route = createFileRoute("/upload")({
   head: () => ({
@@ -34,6 +38,7 @@ function UploadPage() {
   const [genre, setGenre] = useState(ALL_GENRES[0]);
   const [description, setDescription] = useState("");
   const [tags, setTags] = useState("");
+  const [pages, setPages] = useState<number | null>(null);
   
   const [uploading, setUploading] = useState(0);
   const [processing, setProcessing] = useState(false);
@@ -83,6 +88,7 @@ function UploadPage() {
     setGenre(ALL_GENRES[0]);
     setDescription("");
     setTags("");
+    setPages(null);
     setUploading(0);
     setProcessing(false);
   };
@@ -103,6 +109,7 @@ function UploadPage() {
       formData.append("genre", genre);
       formData.append("description", description);
       formData.append("tags", tags);
+      if (pages !== null) formData.append("pages", pages.toString());
       
       const idToken = await user.getIdToken();
       const uploadId = Math.random().toString(36).substring(7);
@@ -279,7 +286,7 @@ function UploadPage() {
                 type="file"
                 accept=".pdf,.epub"
                 className="hidden"
-                onChange={(e) => {
+                onChange={async (e) => {
                   if (e.target.files && e.target.files.length > 0) {
                     const file = e.target.files[0];
                     if (file.size > 300 * 1024 * 1024) {
@@ -287,6 +294,19 @@ function UploadPage() {
                       return;
                     }
                     setBookFile(file);
+                    
+                    if (file.name.toLowerCase().endsWith('.pdf')) {
+                      try {
+                        const arrayBuffer = await file.arrayBuffer();
+                        const loadingTask = pdfjsLib.getDocument(arrayBuffer);
+                        const pdfDoc = await loadingTask.promise;
+                        setPages(pdfDoc.numPages);
+                      } catch (err) {
+                        console.error("Failed to extract pages from PDF", err);
+                      }
+                    } else {
+                      setPages(null);
+                    }
                   }
                 }}
               />
@@ -466,7 +486,9 @@ function UploadPage() {
                       <FileText className="w-5 h-5 text-primary" />
                       <div className="flex-1 min-w-0">
                         <p className="truncate text-sm font-medium">{bookFile.name}</p>
-                        <p className="text-xs text-muted-foreground">{(bookFile.size / 1024 / 1024).toFixed(2)} MB</p>
+                        <p className="text-xs text-muted-foreground">
+                          {(bookFile.size / 1024 / 1024).toFixed(2)} MB {pages !== null ? `• ${pages} pages` : ''}
+                        </p>
                       </div>
                     </div>
                   )}

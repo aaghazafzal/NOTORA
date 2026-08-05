@@ -95,7 +95,7 @@ app.post('/api/upload', verifyToken, uploadLimiter, upload.fields([{ name: 'book
         if (uploadId) uploadProgressMap.set(uploadId, { status: 'uploading_server', progress: 0 });
         const bookFile = req.files['book'] ? req.files['book'][0] : null;
         const coverFile = req.files['cover'] ? req.files['cover'][0] : null;
-        const { title, author, description } = req.body;
+        const { title, author, description, pages } = req.body;
         
         if (!bookFile || !coverFile) {
             return res.status(400).json({ error: 'Both book and cover files are required' });
@@ -155,6 +155,7 @@ app.post('/api/upload', verifyToken, uploadLimiter, upload.fields([{ name: 'book
             coverUrl: coverUrl,
             genre: req.body.genre || 'Other',
             tags: req.body.tags ? req.body.tags.split(',').map(t => t.trim()) : [],
+            pages: pages ? parseInt(pages) : null,
             telegramPrimaryMsgId: primaryMsgId,
             telegramBackupMsgId: backupMsgId,
             uploaderId: req.user.uid

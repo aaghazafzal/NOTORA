@@ -186,7 +186,7 @@ function HomePage() {
         language: b.language || "English",
         isbn: "000-0000000000",
         publishedYear: b.uploadDate ? new Date(b.uploadDate).getFullYear() : 2024,
-        pages: 300,
+        pages: b.pages || 300,
         rating: 4.8,
         ratingCount: 1500,
         downloads: 120,
