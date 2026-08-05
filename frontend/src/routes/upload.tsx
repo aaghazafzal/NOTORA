@@ -13,10 +13,6 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { BookCard } from "@/components/BookCard";
 import { Badge } from "@/components/ui/badge";
 import { coverStyle } from "@/lib/cover";
-import * as pdfjsLib from 'pdfjs-dist';
-import workerSrc from "pdfjs-dist/build/pdf.worker.min.mjs?url";
-
-pdfjsLib.GlobalWorkerOptions.workerSrc = workerSrc;
 
 export const Route = createFileRoute("/upload")({
   head: () => ({
@@ -297,6 +293,10 @@ function UploadPage() {
                     
                     if (file.name.toLowerCase().endsWith('.pdf')) {
                       try {
+                        const pdfjsLib = await import('pdfjs-dist');
+                        const workerSrc = await import('pdfjs-dist/build/pdf.worker.min.mjs?url');
+                        pdfjsLib.GlobalWorkerOptions.workerSrc = workerSrc.default;
+
                         const arrayBuffer = await file.arrayBuffer();
                         const loadingTask = pdfjsLib.getDocument(arrayBuffer);
                         const pdfDoc = await loadingTask.promise;
