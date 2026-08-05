@@ -13,6 +13,7 @@ import { UserPlus, Loader2, BookOpen, Clock, Edit3, Settings, Camera } from "luc
 import { useState, useEffect } from "react";
 import { useAuthStore } from "@/store/useAuthStore";
 import { toast } from "sonner";
+import { ImageCropperModal } from "@/components/ui/image-cropper";
 
 export const Route = createFileRoute("/profile/$userId")({
   head: () => ({
@@ -36,6 +37,8 @@ function ProfilePage() {
   const [editBio, setEditBio] = useState("");
   const [editPhoto, setEditPhoto] = useState<File | null>(null);
   const [editPreview, setEditPreview] = useState("");
+  const [cropperOpen, setCropperOpen] = useState(false);
+  const [cropperSrc, setCropperSrc] = useState("");
   const [saving, setSaving] = useState(false);
 
   // Determine which user to show
@@ -143,10 +146,15 @@ function ProfilePage() {
   const handlePhotoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
-      setEditPhoto(file);
-      const url = URL.createObjectURL(file);
-      setEditPreview(url);
+      setCropperSrc(URL.createObjectURL(file));
+      setCropperOpen(true);
+      e.target.value = "";
     }
+  };
+
+  const handleCropComplete = (croppedFile: File) => {
+    setEditPhoto(croppedFile);
+    setEditPreview(URL.createObjectURL(croppedFile));
   };
 
   if (isAuthLoading) {
@@ -377,6 +385,13 @@ function ProfilePage() {
           </TabsContent>
         </Tabs>
       </div>
+      
+      <ImageCropperModal
+        isOpen={cropperOpen}
+        onClose={() => setCropperOpen(false)}
+        imageSrc={cropperSrc}
+        onCropComplete={handleCropComplete}
+      />
     </div>
   );
 }
