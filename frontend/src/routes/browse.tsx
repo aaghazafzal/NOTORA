@@ -24,7 +24,7 @@ export const Route = createFileRoute("/browse")({
   validateSearch: searchSchema,
   head: () => ({
     meta: [
-      { title: "Browse the library — LumenPages" },
+      { title: "Browse the library — Notora" },
       {
         name: "description",
         content:

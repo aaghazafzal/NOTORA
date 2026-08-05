@@ -85,13 +85,13 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       meta: [
         { charSet: "utf-8" },
         { name: "viewport", content: "width=device-width, initial-scale=1" },
-        { title: "LumenPages — Read, share, and build your library" },
+        { title: "Notora — Read, share, and build your library" },
         {
           name: "description",
           content:
             "A modern e-book platform for readers, authors, and communities. Browse thousands of titles, read in the browser, build shelves, and share what moves you.",
         },
-        { property: "og:title", content: "LumenPages" },
+        { property: "og:title", content: "Notora" },
         {
           property: "og:description",
           content:

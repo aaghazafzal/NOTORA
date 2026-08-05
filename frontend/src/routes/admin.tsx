@@ -18,7 +18,7 @@ import { toast } from "sonner";
 export const Route = createFileRoute("/admin")({
   head: () => ({
     meta: [
-      { title: "Admin — LumenPages" },
+      { title: "Admin — Notora" },
       { name: "robots", content: "noindex" },
     ],
   }),

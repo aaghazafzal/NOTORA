@@ -11,13 +11,13 @@ import { coverStyle } from "@/lib/cover";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "LumenPages — Read anywhere, remember everything" },
+      { title: "Notora — Read anywhere, remember everything" },
       {
         name: "description",
         content:
           "Discover thousands of e-books, read in your browser with a reader built for long attention, and share what you love with a community of readers.",
       },
-      { property: "og:title", content: "LumenPages" },
+      { property: "og:title", content: "Notora" },
       {
         property: "og:description",
         content:

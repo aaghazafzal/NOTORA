@@ -48,7 +48,7 @@ export function AppSidebar() {
             <BookOpen className="h-4 w-4 text-primary-foreground" />
           </div>
           <span className="font-display text-lg font-bold tracking-tight">
-            LumenPages
+            Notora
           </span>
         </Link>
       </SidebarHeader>

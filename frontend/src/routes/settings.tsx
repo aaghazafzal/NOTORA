@@ -13,7 +13,7 @@ import { useState } from "react";
 export const Route = createFileRoute("/settings")({
   head: () => ({
     meta: [
-      { title: "Settings — LumenPages" },
+      { title: "Settings — Notora" },
       { name: "description", content: "Account, appearance, and notification preferences." },
     ],
   }),
@@ -25,7 +25,7 @@ function SettingsPage() {
   const setTheme = useAppStore((s) => s.setTheme);
   const user = userById(useAppStore((s) => s.currentUserId));
   const [name, setName] = useState(user?.name ?? "");
-  const [email, setEmail] = useState("maya@lumenpages.app");
+  const [email, setEmail] = useState("maya@notora.app");
   const [language, setLanguage] = useState("English");
 
   return (

@@ -17,7 +17,7 @@ import { coverStyle } from "@/lib/cover";
 export const Route = createFileRoute("/upload")({
   head: () => ({
     meta: [
-      { title: "Creator Dashboard — LumenPages" },
+      { title: "Creator Dashboard — Notora" },
       { name: "description", content: "Manage your uploads and publish new books." },
     ],
   }),
@@ -227,7 +227,7 @@ function UploadPage() {
             Upload a book
           </h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            Share your knowledge with the LumenPages community.
+            Share your knowledge with the Notora community.
           </p>
         </div>
         <Button variant="ghost" size="sm" onClick={() => { resetWizard(); setView("dashboard"); }} className="rounded-full text-muted-foreground">
@@ -506,7 +506,7 @@ function UploadPage() {
             </div>
             
             <h2 className="font-display text-2xl font-bold mb-2">
-              {processing ? "Processing on server..." : "Uploading to LumenPages..."}
+              {processing ? "Processing on server..." : "Uploading to Notora..."}
             </h2>
             <p className="text-muted-foreground max-w-sm">
               {processing 

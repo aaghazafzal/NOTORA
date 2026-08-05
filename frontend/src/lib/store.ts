@@ -134,7 +134,7 @@ export const useAppStore = create<AppState>()(
       setReaderPref: (k, v) => set({ [k]: v } as Partial<AppState>),
     }),
     {
-      name: "lumenpages-store",
+      name: "notora-store",
     }
   )
 );

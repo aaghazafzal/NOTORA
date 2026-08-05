@@ -17,8 +17,8 @@ import { toast } from "sonner";
 export const Route = createFileRoute("/profile/$userId")({
   head: () => ({
     meta: [
-      { title: "Profile — LumenPages" },
-      { name: "description", content: "Reader profile on LumenPages." },
+      { title: "Profile — Notora" },
+      { name: "description", content: "Reader profile on Notora." },
     ],
   }),
   component: ProfilePage,
@@ -174,7 +174,7 @@ function ProfilePage() {
 
   const displayPhoto = dbUser?.photoUrl || targetUser.photoURL;
   const displayName = dbUser?.name || targetUser.displayName || "Lumen Reader";
-  const displayBio = dbUser?.bio || "Avid reader, curator of fine literature, and active contributor to the LumenPages community. Always looking for the next great story.";
+  const displayBio = dbUser?.bio || "Avid reader, curator of fine literature, and active contributor to the Notora community. Always looking for the next great story.";
   const displayFollowers = dbUser?.followers || 142;
   const displayFollowing = dbUser?.following || 89;
 

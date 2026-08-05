@@ -81,8 +81,8 @@ export const Route = createFileRoute("/read/$bookId")({
     meta: [
       {
         title: loaderData
-          ? `Reading: ${loaderData.book.title} — LumenPages`
-          : "Reader — LumenPages",
+          ? `Reading: ${loaderData.book.title} — Notora`
+          : "Reader — Notora",
       },
       { name: "robots", content: "noindex" },
     ],

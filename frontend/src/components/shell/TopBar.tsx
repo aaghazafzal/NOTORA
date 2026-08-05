@@ -54,14 +54,14 @@ export function TopBar() {
       <Link
         to="/"
         className="flex items-center gap-2 md:hidden"
-        aria-label="LumenPages home"
+        aria-label="Notora home"
       >
         <div className="grid h-7 w-7 place-items-center rounded-lg bg-gradient-to-br from-primary to-secondary">
           <span className="font-display text-xs font-bold text-primary-foreground">
             L
           </span>
         </div>
-        <span className="font-display text-base font-bold">LumenPages</span>
+        <span className="font-display text-base font-bold">Notora</span>
       </Link>
 
       <form

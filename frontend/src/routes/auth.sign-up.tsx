@@ -14,7 +14,7 @@ import { useAuthStore } from "@/store/useAuthStore";
 export const Route = createFileRoute("/auth/sign-up")({
   head: () => ({
     meta: [
-      { title: "Sign up — LumenPages" },
+      { title: "Sign up — Notora" },
       { name: "robots", content: "noindex" },
     ],
   }),
@@ -135,7 +135,7 @@ function SignUpPage() {
       
       if (!res.ok) throw new Error("Failed to complete profile");
       
-      toast.success("Welcome to LumenPages!");
+      toast.success("Welcome to Notora!");
       navigate({ to: "/" });
     } catch (error: any) {
       toast.error("Failed to complete profile. You can do this later from Settings.");
@@ -157,7 +157,7 @@ function SignUpPage() {
           <div className="grid h-12 w-12 place-items-center rounded-2xl bg-gradient-to-br from-primary to-secondary shadow-lg">
             <BookOpen className="h-6 w-6 text-primary-foreground" />
           </div>
-          <span className="font-display text-3xl font-black text-foreground">LumenPages</span>
+          <span className="font-display text-3xl font-black text-foreground">Notora</span>
         </div>
         
         <div className="relative z-10 max-w-lg">
@@ -170,7 +170,7 @@ function SignUpPage() {
         </div>
         
         <div className="relative z-10 text-sm text-muted-foreground">
-          © {new Date().getFullYear()} LumenPages. All rights reserved.
+          © {new Date().getFullYear()} Notora. All rights reserved.
         </div>
       </div>
 
@@ -205,7 +205,7 @@ function SignUpPage() {
             <div className="grid h-10 w-10 place-items-center rounded-xl bg-gradient-to-br from-primary to-secondary neon-glow">
               <BookOpen className="h-5 w-5 text-primary-foreground" />
             </div>
-            <span className="font-display text-2xl font-black">LumenPages</span>
+            <span className="font-display text-2xl font-black">Notora</span>
           </Link>
           
           <div className="transition-all duration-500">

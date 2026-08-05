@@ -20,7 +20,7 @@ import {
 export const Route = createFileRoute("/library")({
   head: () => ({
     meta: [
-      { title: "My Library — LumenPages" },
+      { title: "My Library — Notora" },
       {
         name: "description",
         content: "Your shelves: reading, favorites, completed, to-read, and custom lists.",

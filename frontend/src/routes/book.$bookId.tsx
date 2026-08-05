@@ -59,7 +59,7 @@ export const Route = createFileRoute("/book/$bookId")({
     if (!loaderData) {
       return {
         meta: [
-          { title: "Book not found — LumenPages" },
+          { title: "Book not found — Notora" },
           { name: "robots", content: "noindex" },
         ],
       };
@@ -68,9 +68,9 @@ export const Route = createFileRoute("/book/$bookId")({
     const desc = b.description.slice(0, 160);
     return {
       meta: [
-        { title: `${b.title} by ${b.authorName} — LumenPages` },
+        { title: `${b.title} by ${b.authorName} — Notora` },
         { name: "description", content: desc },
-        { property: "og:title", content: `${b.title} — LumenPages` },
+        { property: "og:title", content: `${b.title} — Notora` },
         { property: "og:description", content: desc },
         { property: "og:type", content: "book" },
       ],

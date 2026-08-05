@@ -1,5 +1,5 @@
 
-# LumenPages — Full Frontend E-Book Platform
+# Notora — Full Frontend E-Book Platform
 
 A complete, mock-data-driven frontend for the e-book library described in your plan. No backend, no auth server, no file conversion — every screen renders from typed TypeScript fixtures so the whole UX is walkable end-to-end. Default look: **Charcoal Purple** (dark), with all 6 palettes switchable at runtime.
 

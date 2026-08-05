@@ -60,7 +60,7 @@ export const USERS: User[] = [
     name: "Admin",
     handle: "@admin",
     avatarSeed: "admin",
-    bio: "LumenPages platform admin.",
+    bio: "Notora platform admin.",
     role: "admin",
     followers: 0,
     following: 0,
