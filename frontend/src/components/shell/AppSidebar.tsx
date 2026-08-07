@@ -6,7 +6,6 @@ import {
   Upload,
   User,
   Settings,
-  Shield,
   BookOpen,
 } from "lucide-react";
 import {
@@ -33,7 +32,6 @@ const account = [
   { to: "/settings", label: "Settings", icon: Settings },
 ];
 
-const admin = [{ to: "/admin", label: "Admin", icon: Shield }];
 
 export function AppSidebar() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
@@ -45,7 +43,7 @@ export function AppSidebar() {
       <SidebarHeader className="border-b border-sidebar-border">
         <Link to="/" className="flex items-center gap-2 px-2 py-3">
           <div className="relative grid h-8 w-8 shrink-0 place-items-center rounded-xl bg-gradient-to-br from-primary to-secondary shadow-[0_0_20px_-4px_var(--primary)]">
-            <BookOpen className="h-4 w-4 text-primary-foreground" />
+            <BookOpen className="h-5 w-5 text-primary-foreground" strokeWidth={2.5} />
           </div>
           <span className="font-display text-lg font-bold tracking-tight">
             Notora
@@ -64,8 +62,8 @@ export function AppSidebar() {
                     isActive={isActive(it.to, it.exact)}
                   >
                     <Link to={it.to}>
-                      <it.icon className="h-4 w-4" />
-                      <span>{it.label}</span>
+                      <it.icon className="h-5 w-5" strokeWidth={2.5} />
+                      <span className="font-semibold">{it.label}</span>
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -82,26 +80,8 @@ export function AppSidebar() {
                 <SidebarMenuItem key={it.to}>
                   <SidebarMenuButton asChild isActive={isActive(it.to)}>
                     <Link to={it.to}>
-                      <it.icon className="h-4 w-4" />
-                      <span>{it.label}</span>
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
-
-        <SidebarGroup>
-          <SidebarGroupLabel>Manage</SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {admin.map((it) => (
-                <SidebarMenuItem key={it.to}>
-                  <SidebarMenuButton asChild isActive={isActive(it.to)}>
-                    <Link to={it.to}>
-                      <it.icon className="h-4 w-4" />
-                      <span>{it.label}</span>
+                      <it.icon className="h-5 w-5" strokeWidth={2.5} />
+                      <span className="font-semibold">{it.label}</span>
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
