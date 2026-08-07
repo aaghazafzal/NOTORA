@@ -1,5 +1,4 @@
 import { Link } from "@tanstack/react-router";
-import { Star } from "lucide-react";
 import type { Book } from "@/data/books";
 import { coverStyle } from "@/lib/cover";
 
@@ -46,11 +45,10 @@ export function BookCard({ book, size = "md" }: Props) {
           </div>
         </div>
       </div>
-      <div className="mt-2 flex items-center gap-1 text-xs text-muted-foreground">
-        <Star className="h-3 w-3 fill-current text-accent" aria-hidden />
-        <span className="font-medium text-foreground">{book.rating.toFixed(1)}</span>
-        <span>·</span>
-        <span>{book.ratingCount.toLocaleString()}</span>
+      <div className="mt-2 flex items-center gap-2 text-xs text-muted-foreground">
+        {book.pages > 0 && <span className="font-medium text-foreground">{book.pages} pages</span>}
+        {book.pages > 0 && book.publishedYear && <span>·</span>}
+        {book.publishedYear && <span>{book.publishedYear}</span>}
       </div>
     </Link>
   );
