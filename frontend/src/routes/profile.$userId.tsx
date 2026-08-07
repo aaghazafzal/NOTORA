@@ -48,46 +48,47 @@ function ProfilePage() {
   const [saving, setSaving] = useState(false);
 
   // Determine which user to show
-  const isMe = userId === "me";
-  const targetUser = isMe ? currentUser : null;
+  const isMe = userId === "me" || (currentUser && currentUser.uid === userId);
+  const profileId = userId === "me" ? currentUser?.uid : userId;
 
   useEffect(() => {
-    if (!isAuthLoading && isMe && !currentUser) {
+    if (!isAuthLoading && userId === "me" && !currentUser) {
       navigate({ to: "/auth/sign-in" });
     }
-  }, [isMe, currentUser, isAuthLoading, navigate]);
+  }, [userId, currentUser, isAuthLoading, navigate]);
 
   // Fetch Mongo User Data (for bio, custom photo, etc.)
-  const { data: dbUser, refetch: refetchUser } = useQuery({
-    queryKey: ["db-user", targetUser?.uid],
+  const { data: dbUser, refetch: refetchUser, isLoading: isDbLoading, error: dbError } = useQuery({
+    queryKey: ["db-user", profileId],
     queryFn: async () => {
-      if (!targetUser?.uid) return null;
+      if (!profileId) return null;
       const res = await fetch(
-        `${import.meta.env.VITE_API_URL || "http://localhost:9090"}/api/users/${targetUser.uid}`,
+        `${import.meta.env.VITE_API_URL || "http://localhost:9090"}/api/users/${profileId}`,
       );
-      if (!res.ok) return null; // fallback gracefully
+      if (!res.ok) throw new Error("User not found");
       return res.json();
     },
-    enabled: !!targetUser?.uid,
+    enabled: !!profileId,
+    retry: false
   });
 
   // Setup initial edit state
   useEffect(() => {
     if (isEditing) {
-      setEditName(dbUser?.name || targetUser?.displayName || "");
+      setEditName(dbUser?.name || currentUser?.displayName || "");
       setEditBio(dbUser?.bio || "");
-      setEditPreview(dbUser?.photoUrl || targetUser?.photoURL || "");
+      setEditPreview(dbUser?.photoUrl || currentUser?.photoURL || "");
       setEditPhoto(null);
     }
-  }, [isEditing, dbUser, targetUser]);
+  }, [isEditing, dbUser, currentUser]);
 
   // Fetch real uploaded books from backend
   const { data: uploadedBooks = [], isLoading: isBooksLoading } = useQuery({
-    queryKey: ["user-books", targetUser?.uid],
+    queryKey: ["user-books", profileId],
     queryFn: async () => {
-      if (!targetUser?.uid) return [];
+      if (!profileId) return [];
       const res = await fetch(
-        `${import.meta.env.VITE_API_URL || "http://localhost:9090"}/api/books/user/${targetUser.uid}`,
+        `${import.meta.env.VITE_API_URL || "http://localhost:9090"}/api/books/user/${profileId}`,
       );
       if (!res.ok) throw new Error("Failed to fetch user books");
       const data = await res.json();
@@ -104,12 +105,12 @@ function ProfilePage() {
         language: b.language || "English",
       }));
     },
-    enabled: !!targetUser?.uid,
+    enabled: !!profileId,
   });
 
   const handleUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!targetUser) return;
+    if (!currentUser) return;
     setSaving(true);
 
     try {
@@ -122,7 +123,7 @@ function ProfilePage() {
         formData.append("removePhoto", "true");
       }
 
-      const token = await targetUser.getIdToken();
+      const token = await currentUser.getIdToken();
       const res = await fetch(
         `${import.meta.env.VITE_API_URL || "http://localhost:9090"}/api/users/profile`,
         {
@@ -141,17 +142,17 @@ function ProfilePage() {
       // SYNC WITH FIREBASE AUTH SO IT PERSISTS ACROSS LOGOUT/LOGIN
       const { updateProfile } = await import("firebase/auth");
       const updateData: any = {
-        displayName: data.user.name || targetUser.displayName,
+        displayName: data.user.name || currentUser.displayName,
       };
       if (!editPreview && !editPhoto) {
         updateData.photoURL = "";
       } else {
-        updateData.photoURL = data.user.photoUrl || targetUser.photoURL;
+        updateData.photoURL = data.user.photoUrl || currentUser.photoURL;
       }
-      await updateProfile(targetUser, updateData);
+      await updateProfile(currentUser, updateData);
 
       // Force update the Zustand store to trigger TopBar re-render immediately
-      useAuthStore.getState().setUser(Object.assign({}, targetUser));
+      useAuthStore.getState().setUser(Object.assign({}, currentUser));
 
       await refetchUser();
       setIsEditing(false);
@@ -177,7 +178,7 @@ function ProfilePage() {
     setEditPreview(URL.createObjectURL(croppedFile));
   };
 
-  if (isAuthLoading) {
+  if (isAuthLoading || (isDbLoading && profileId)) {
     return (
       <div className="flex min-h-[70vh] justify-center items-center">
         <Loader2 className="animate-spin text-primary w-10 h-10" />
@@ -185,7 +186,7 @@ function ProfilePage() {
     );
   }
 
-  if (!targetUser) {
+  if (!profileId || (dbError && !isMe)) {
     return (
       <div className="flex min-h-[70vh] flex-col items-center justify-center px-4 text-center">
         <div className="w-20 h-20 bg-muted rounded-full flex items-center justify-center mb-6">
@@ -200,16 +201,17 @@ function ProfilePage() {
     );
   }
 
-  const displayPhoto = dbUser?.photoUrl || targetUser.photoURL;
-  const displayName = dbUser?.name || targetUser.displayName || "Lumen Reader";
+  const displayPhoto = dbUser?.photoUrl || (isMe ? currentUser?.photoURL : null);
+  const displayName = dbUser?.name || (isMe ? currentUser?.displayName : "Lumen Reader");
   const displayBio =
     dbUser?.bio ||
     "Avid reader, curator of fine literature, and active contributor to the Notora community. Always looking for the next great story.";
   const displayFollowers = dbUser?.followers || 142;
   const displayFollowing = dbUser?.following || 89;
 
-  const generatedHandle = targetUser.email ? `@${targetUser.email.split("@")[0]}` : "@reader";
-  const initials = displayName.slice(0, 1).toUpperCase();
+  const baseNameForHandle = isMe && currentUser?.email ? currentUser.email.split("@")[0] : (displayName ? displayName.toLowerCase().replace(/\s+/g, '') : "reader");
+  const generatedHandle = `@${baseNameForHandle}`;
+  const initials = displayName ? displayName.slice(0, 1).toUpperCase() : "R";
 
   return (
     <div className="animate-in fade-in duration-500 pb-20">
