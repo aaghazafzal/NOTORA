@@ -18,18 +18,8 @@ import type { Book } from "@/data/books";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { Input } from "@/components/ui/input";
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-} from "@/components/ui/sheet";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useAppStore, type Highlight } from "@/lib/store";
 import { toast } from "sonner";
 
@@ -37,52 +27,62 @@ const RealBookReader = lazy(() => import("@/components/RealBookReader"));
 
 export const Route = createFileRoute("/read/$bookId")({
   loader: async ({ params }) => {
-    let book = bookBySlug(params.bookId) || (await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:9090'}/api/books/${params.bookId}`).then(r => r.json()).then(b => b.error ? null : {
-      id: b._id,
-      slug: b._id,
-      title: b.title,
-      authorId: "u_real",
-      authorName: b.author,
-      description: b.description,
-      genre: b.genre,
-      tags: b.tags || [],
-      language: b.language || "English",
-      isbn: "000-0000000000",
-      publishedYear: b.uploadDate ? new Date(b.uploadDate).getFullYear() : 2024,
-      pages: b.pages || 300,
-      rating: 4.8,
-      ratingCount: 1500,
-      downloads: 120,
-      formats: ["pdf"],
-      chapters: [
-        { 
-          title: "Introduction", 
-          paragraphs: [
-            "This book is being loaded from our MongoDB database and Telegram cloud storage.", 
-            "The actual file is available to download or stream from the backend API: http://localhost:9090/api/download/" + b._id,
-            "Currently, this custom reading interface uses this placeholder text because parsing a real PDF or EPUB into HTML paragraphs requires a dedicated library like pdf.js or epub.js.",
-            "But all the features—TTS, highlights, font changes, and themes—will work on this text just like a real parsed book!"
-          ] 
-        },
-        { 
-          title: "Chapter 1", 
-          paragraphs: [
-            "The city breathed in the color of graphite that morning, and the trams whispered along tracks slick with rain.", 
-            "There is a particular kind of silence that lives inside a library after closing time. It is not empty. It is dense, layered, patient — the sound of thousands of held breaths waiting to be exhaled by the first reader in the morning."
-          ] 
-        }
-      ],
-      coverUrl: b.coverUrl,
-    }).catch(() => null));
+    let book =
+      bookBySlug(params.bookId) ||
+      (await fetch(
+        `${import.meta.env.VITE_API_URL || "http://localhost:9090"}/api/books/${params.bookId}`,
+      )
+        .then((r) => r.json())
+        .then((b) =>
+          b.error
+            ? null
+            : {
+                id: b._id,
+                slug: b._id,
+                title: b.title,
+                authorId: "u_real",
+                authorName: b.author,
+                description: b.description,
+                genre: b.genre,
+                tags: b.tags || [],
+                language: b.language || "English",
+                isbn: "000-0000000000",
+                publishedYear: b.uploadDate ? new Date(b.uploadDate).getFullYear() : 2024,
+                pages: b.pages || 300,
+                rating: 4.8,
+                ratingCount: 1500,
+                downloads: 120,
+                formats: ["pdf"],
+                chapters: [
+                  {
+                    title: "Introduction",
+                    paragraphs: [
+                      "This book is being loaded from our MongoDB database and Telegram cloud storage.",
+                      "The actual file is available to download or stream from the backend API: http://localhost:9090/api/download/" +
+                        b._id,
+                      "Currently, this custom reading interface uses this placeholder text because parsing a real PDF or EPUB into HTML paragraphs requires a dedicated library like pdf.js or epub.js.",
+                      "But all the features—TTS, highlights, font changes, and themes—will work on this text just like a real parsed book!",
+                    ],
+                  },
+                  {
+                    title: "Chapter 1",
+                    paragraphs: [
+                      "The city breathed in the color of graphite that morning, and the trams whispered along tracks slick with rain.",
+                      "There is a particular kind of silence that lives inside a library after closing time. It is not empty. It is dense, layered, patient — the sound of thousands of held breaths waiting to be exhaled by the first reader in the morning.",
+                    ],
+                  },
+                ],
+                coverUrl: b.coverUrl,
+              },
+        )
+        .catch(() => null));
     if (!book) throw notFound();
     return { book };
   },
   head: ({ loaderData }) => ({
     meta: [
       {
-        title: loaderData
-          ? `Reading: ${loaderData.book.title} — Notora`
-          : "Reader — Notora",
+        title: loaderData ? `Reading: ${loaderData.book.title} — Notora` : "Reader — Notora",
       },
       { name: "robots", content: "noindex" },
     ],
@@ -139,11 +139,17 @@ function ReaderPage() {
   const savedProgress = useAppStore((s) => s.progress[book.id] ?? 0);
   const setProgress = useAppStore((s) => s.setProgress);
   const allBookmarks = useAppStore((s) => s.bookmarks);
-  const bookmarks = useMemo(() => allBookmarks.filter((b) => b.bookId === book.id), [allBookmarks, book.id]);
+  const bookmarks = useMemo(
+    () => allBookmarks.filter((b) => b.bookId === book.id),
+    [allBookmarks, book.id],
+  );
   const addBookmark = useAppStore((s) => s.addBookmark);
   const removeBookmark = useAppStore((s) => s.removeBookmark);
   const allHighlights = useAppStore((s) => s.highlights);
-  const highlights = useMemo(() => allHighlights.filter((h) => h.bookId === book.id), [allHighlights, book.id]);
+  const highlights = useMemo(
+    () => allHighlights.filter((h) => h.bookId === book.id),
+    [allHighlights, book.id],
+  );
   const addHighlight = useAppStore((s) => s.addHighlight);
 
   const fontSize = useAppStore((s) => s.readerFontSize);
@@ -191,9 +197,12 @@ function ReaderPage() {
     return () => window.speechSynthesis.cancel();
   }, [ttsOn, page, pages]);
 
-  useEffect(() => () => {
-    if (typeof window !== "undefined") window.speechSynthesis?.cancel();
-  }, []);
+  useEffect(
+    () => () => {
+      if (typeof window !== "undefined") window.speechSynthesis?.cancel();
+    },
+    [],
+  );
 
   const currentChapter = book.chapters[pages[page]?.chapterIndex ?? 0];
   const progress = ((page + 1) / totalPages) * 100;
@@ -242,7 +251,13 @@ function ReaderPage() {
   if (book.authorId === "u_real") {
     if (!isMounted) return null;
     return (
-      <Suspense fallback={<div className="h-dvh w-full bg-[#12121C] text-white flex items-center justify-center">Loading viewer...</div>}>
+      <Suspense
+        fallback={
+          <div className="h-dvh w-full bg-[#12121C] text-white flex items-center justify-center">
+            Loading viewer...
+          </div>
+        }
+      >
         <RealBookReader book={book} />
       </Suspense>
     );
@@ -270,9 +285,7 @@ function ReaderPage() {
         </Button>
         <div className="min-w-0 flex-1">
           <div className="truncate text-sm font-semibold">{book.title}</div>
-          <div className="truncate text-xs opacity-70">
-            {currentChapter?.title}
-          </div>
+          <div className="truncate text-xs opacity-70">{currentChapter?.title}</div>
         </div>
         <Sheet>
           <SheetTrigger asChild>
@@ -366,17 +379,9 @@ function ReaderPage() {
                 </h3>
                 <ul className="mt-2 space-y-2">
                   {highlights.map((h) => (
-                    <li
-                      key={h.id}
-                      className="rounded-lg border border-border p-3 text-sm"
-                    >
-                      <button
-                        onClick={() => go(h.page)}
-                        className="text-left"
-                      >
-                        <div className="text-xs opacity-70">
-                          Page {h.page + 1}
-                        </div>
+                    <li key={h.id} className="rounded-lg border border-border p-3 text-sm">
+                      <button onClick={() => go(h.page)} className="text-left">
+                        <div className="text-xs opacity-70">Page {h.page + 1}</div>
                         <div className="mt-1 italic">"{h.text}"</div>
                       </button>
                     </li>
@@ -418,11 +423,7 @@ function ReaderPage() {
           aria-label={ttsOn ? "Stop reading aloud" : "Read aloud"}
           onClick={() => setTtsOn((v) => !v)}
         >
-          {ttsOn ? (
-            <VolumeX className="h-5 w-5" />
-          ) : (
-            <Volume2 className="h-5 w-5" />
-          )}
+          {ttsOn ? <VolumeX className="h-5 w-5" /> : <Volume2 className="h-5 w-5" />}
         </Button>
 
         <Popover>
@@ -442,9 +443,7 @@ function ReaderPage() {
                     key={t}
                     onClick={() => setPref("readerTheme", t)}
                     className={`rounded-lg border p-3 text-xs font-medium capitalize ${
-                      readerTheme === t
-                        ? "border-primary"
-                        : "border-border hover:bg-accent"
+                      readerTheme === t ? "border-primary" : "border-border hover:bg-accent"
                     }`}
                     style={themeStyles[t]}
                   >
@@ -455,9 +454,7 @@ function ReaderPage() {
             </div>
             <div>
               <div className="mb-2 flex justify-between text-xs">
-                <span className="font-semibold uppercase tracking-wider opacity-70">
-                  Font
-                </span>
+                <span className="font-semibold uppercase tracking-wider opacity-70">Font</span>
                 <span>{fontFamily}</span>
               </div>
               <div className="grid grid-cols-2 gap-2">
@@ -466,13 +463,10 @@ function ReaderPage() {
                     key={f}
                     onClick={() => setPref("readerFontFamily", f)}
                     className={`rounded-lg border px-3 py-2 text-sm capitalize ${
-                      fontFamily === f
-                        ? "border-primary bg-accent"
-                        : "border-border"
+                      fontFamily === f ? "border-primary bg-accent" : "border-border"
                     }`}
                     style={{
-                      fontFamily:
-                        f === "serif" ? "Lora, Georgia, serif" : "Inter, sans-serif",
+                      fontFamily: f === "serif" ? "Lora, Georgia, serif" : "Inter, sans-serif",
                     }}
                   >
                     {f}
@@ -482,9 +476,7 @@ function ReaderPage() {
             </div>
             <div>
               <div className="mb-2 flex justify-between text-xs">
-                <span className="font-semibold uppercase tracking-wider opacity-70">
-                  Text size
-                </span>
+                <span className="font-semibold uppercase tracking-wider opacity-70">Text size</span>
                 <span>{fontSize}px</span>
               </div>
               <Slider
@@ -517,9 +509,7 @@ function ReaderPage() {
       {/* Content */}
       <div className="mx-auto max-w-2xl px-6 py-10 sm:py-16">
         {pages[page]?.text.some(
-          (_, i) =>
-            i === 0 &&
-            pages[page].chapterIndex !== pages[page - 1]?.chapterIndex
+          (_, i) => i === 0 && pages[page].chapterIndex !== pages[page - 1]?.chapterIndex,
         ) && (
           <h2
             className="mb-8 font-display text-2xl font-bold sm:text-3xl"
@@ -537,9 +527,7 @@ function ReaderPage() {
             fontSize: `${fontSize}px`,
             lineHeight,
             fontFamily:
-              fontFamily === "serif"
-                ? "Lora, Georgia, serif"
-                : "Inter, ui-sans-serif, system-ui",
+              fontFamily === "serif" ? "Lora, Georgia, serif" : "Inter, ui-sans-serif, system-ui",
           }}
         >
           {pages[page]?.text.map((p, i) => (
@@ -615,7 +603,10 @@ function ReaderPage() {
               <span>
                 Page {page + 1} / {totalPages}
               </span>
-              <span>{Math.round(progress)}% ·  ~{Math.max(1, Math.round((totalPages - page) * 0.6))} min left</span>
+              <span>
+                {Math.round(progress)}% · ~{Math.max(1, Math.round((totalPages - page) * 0.6))} min
+                left
+              </span>
             </div>
           </div>
           <Button

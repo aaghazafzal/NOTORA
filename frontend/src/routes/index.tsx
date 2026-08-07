@@ -1,5 +1,13 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowRight, Sparkles, TrendingUp, Compass, ChevronLeft, ChevronRight, Info } from "lucide-react";
+import {
+  ArrowRight,
+  Sparkles,
+  TrendingUp,
+  Compass,
+  ChevronLeft,
+  ChevronRight,
+  Info,
+} from "lucide-react";
 import { useRef, useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import type { Book } from "@/data/books";
@@ -20,8 +28,7 @@ export const Route = createFileRoute("/")({
       { property: "og:title", content: "Notora" },
       {
         property: "og:description",
-        content:
-          "A modern e-book platform for readers, authors, and communities.",
+        content: "A modern e-book platform for readers, authors, and communities.",
       },
     ],
   }),
@@ -74,13 +81,7 @@ function HeroSkeleton() {
   );
 }
 
-function Row({
-  title,
-  books,
-}: {
-  title: string;
-  books: Book[];
-}) {
+function Row({ title, books }: { title: string; books: Book[] }) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(true);
@@ -95,16 +96,16 @@ function Row({
 
   useEffect(() => {
     checkScroll();
-    window.addEventListener('resize', checkScroll);
-    return () => window.removeEventListener('resize', checkScroll);
+    window.addEventListener("resize", checkScroll);
+    return () => window.removeEventListener("resize", checkScroll);
   }, [books]);
 
-  const scroll = (direction: 'left' | 'right') => {
+  const scroll = (direction: "left" | "right") => {
     if (scrollRef.current) {
-      const scrollAmount = scrollRef.current.clientWidth * 0.8; 
+      const scrollAmount = scrollRef.current.clientWidth * 0.8;
       scrollRef.current.scrollBy({
-        left: direction === 'left' ? -scrollAmount : scrollAmount,
-        behavior: 'smooth'
+        left: direction === "left" ? -scrollAmount : scrollAmount,
+        behavior: "smooth",
       });
     }
   };
@@ -114,9 +115,7 @@ function Row({
     <section className="space-y-2 group/row relative">
       <div className="flex items-end justify-between gap-4">
         <div className="min-w-0">
-          <h2 className="truncate font-display text-2xl font-bold">
-            {title}
-          </h2>
+          <h2 className="truncate font-display text-2xl font-bold">{title}</h2>
         </div>
         <Link
           to="/browse"
@@ -125,26 +124,29 @@ function Row({
           See all <ArrowRight className="h-4 w-4" />
         </Link>
       </div>
-      
+
       <div className="relative">
         {canScrollLeft && (
           <Button
             variant="secondary"
             size="icon"
             className="absolute -left-5 top-1/2 -translate-y-1/2 z-10 hidden md:flex opacity-0 group-hover/row:opacity-100 transition-opacity rounded-full shadow-lg border border-border"
-            onClick={() => scroll('left')}
+            onClick={() => scroll("left")}
           >
             <ChevronLeft className="h-5 w-5" />
           </Button>
         )}
-        
-        <div 
+
+        <div
           ref={scrollRef}
           onScroll={checkScroll}
           className="-mx-6 flex snap-x snap-mandatory gap-4 overflow-x-auto px-6 scroll-px-6 pb-1 sm:mx-0 sm:px-0 sm:scroll-px-0 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden scroll-smooth"
         >
           {books.map((b) => (
-            <div key={b.id} className="snap-start flex-shrink-0 w-[140px] sm:w-[160px] md:w-[180px]">
+            <div
+              key={b.id}
+              className="snap-start flex-shrink-0 w-[140px] sm:w-[160px] md:w-[180px]"
+            >
               <BookCard book={b} />
             </div>
           ))}
@@ -156,7 +158,7 @@ function Row({
             variant="secondary"
             size="icon"
             className="absolute -right-5 top-1/2 -translate-y-1/2 z-10 hidden md:flex opacity-0 group-hover/row:opacity-100 transition-opacity rounded-full shadow-lg border border-border"
-            onClick={() => scroll('right')}
+            onClick={() => scroll("right")}
           >
             <ChevronRight className="h-5 w-5" />
           </Button>
@@ -168,9 +170,11 @@ function Row({
 
 function HomePage() {
   const { data: realBooks = [], isLoading } = useQuery({
-    queryKey: ['home-books'],
+    queryKey: ["home-books"],
     queryFn: async () => {
-      const res = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:9090'}/api/books`);
+      const res = await fetch(
+        `${import.meta.env.VITE_API_URL || "http://localhost:9090"}/api/books`,
+      );
       if (!res.ok) throw new Error("Failed to fetch");
       const data = await res.json();
       const booksArray = data.books || [];
@@ -196,7 +200,7 @@ function HomePage() {
       }));
       // Sort by latest added first
       return mapped; // The backend already sorts by uploadDate: -1
-    }
+    },
   });
 
   if (isLoading) {
@@ -212,7 +216,7 @@ function HomePage() {
   const hero = realBooks.length > 0 ? realBooks[0] : null;
   const trending = [...realBooks].slice(0, 10);
   const newReleases = [...realBooks].slice(0, 10);
-  
+
   const allGenres = Array.from(new Set(realBooks.map((b) => b.genre))).filter(Boolean);
 
   return (
@@ -243,7 +247,11 @@ function HomePage() {
                   size="lg"
                   className="rounded-full px-0 w-12 sm:w-auto sm:px-8"
                 >
-                  <Link to="/book/$bookId" params={{ bookId: hero.slug }} className="flex items-center justify-center">
+                  <Link
+                    to="/book/$bookId"
+                    params={{ bookId: hero.slug }}
+                    className="flex items-center justify-center"
+                  >
                     <span className="hidden sm:inline">About book</span>
                     <Info className="h-5 w-5 sm:hidden" />
                   </Link>
@@ -273,41 +281,23 @@ function HomePage() {
       )}
 
       {/* Rows */}
-      {trending.length > 0 && (
-        <Row
-          title="Trending Now"
-          books={trending}
-        />
-      )}
+      {trending.length > 0 && <Row title="Trending Now" books={trending} />}
 
-      {newReleases.length > 0 && (
-        <Row
-          title="New Arrivals"
-          books={newReleases}
-        />
-      )}
+      {newReleases.length > 0 && <Row title="New Arrivals" books={newReleases} />}
 
       {/* Dynamic Genre Rows */}
       {allGenres.map((genre) => {
         const booksInGenre = realBooks.filter((b) => b.genre === genre);
         if (booksInGenre.length === 0) return null;
-        
-        return (
-          <Row
-            key={genre}
-            title={genre}
-            books={booksInGenre}
-          />
-        );
+
+        return <Row key={genre} title={genre} books={booksInGenre} />;
       })}
 
       {/* Genres Grid */}
       <section className="space-y-4 pt-8">
         <div className="flex items-center gap-2 text-primary">
           <Compass className="h-4 w-4" />
-          <span className="text-xs font-semibold uppercase tracking-wider">
-            Explore
-          </span>
+          <span className="text-xs font-semibold uppercase tracking-wider">Explore</span>
         </div>
         <h2 className="font-display text-2xl font-bold">Browse by genre</h2>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
@@ -318,9 +308,7 @@ function HomePage() {
               search={{ genres: [g] }}
               className="group flex flex-col justify-between overflow-hidden rounded-xl border border-border bg-card p-4 transition-colors hover:border-primary/50 hover:bg-accent"
             >
-              <span className="font-display font-medium group-hover:text-primary">
-                {g}
-              </span>
+              <span className="font-display font-medium group-hover:text-primary">{g}</span>
               <ArrowRight className="mt-4 h-4 w-4 text-muted-foreground opacity-0 transition-all group-hover:translate-x-1 group-hover:opacity-100 group-hover:text-primary" />
             </Link>
           ))}

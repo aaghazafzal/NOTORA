@@ -1,4 +1,3 @@
-
 # Notora — Full Frontend E-Book Platform
 
 A complete, mock-data-driven frontend for the e-book library described in your plan. No backend, no auth server, no file conversion — every screen renders from typed TypeScript fixtures so the whole UX is walkable end-to-end. Default look: **Charcoal Purple** (dark), with all 6 palettes switchable at runtime.
@@ -52,6 +51,7 @@ Palettes: Ocean Calm, Lavender Mist, Sandy Beach (light) · Night Sky, Forest Ni
 ## Data model (mock)
 
 Typed fixtures in `src/data/`:
+
 - `users.ts` — sample readers, authors, moderators, admin
 - `books.ts` — ~30 books with cover, metadata, tags, chapters (lorem content)
 - `reviews.ts`, `shelves.ts`, `notifications.ts`, `moderation.ts`

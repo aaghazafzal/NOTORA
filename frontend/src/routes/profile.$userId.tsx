@@ -5,7 +5,13 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
@@ -42,7 +48,7 @@ function ProfilePage() {
   const [saving, setSaving] = useState(false);
 
   // Determine which user to show
-  const isMe = userId === 'me';
+  const isMe = userId === "me";
   const targetUser = isMe ? currentUser : null;
 
   useEffect(() => {
@@ -53,10 +59,12 @@ function ProfilePage() {
 
   // Fetch Mongo User Data (for bio, custom photo, etc.)
   const { data: dbUser, refetch: refetchUser } = useQuery({
-    queryKey: ['db-user', targetUser?.uid],
+    queryKey: ["db-user", targetUser?.uid],
     queryFn: async () => {
       if (!targetUser?.uid) return null;
-      const res = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:9090'}/api/users/${targetUser.uid}`);
+      const res = await fetch(
+        `${import.meta.env.VITE_API_URL || "http://localhost:9090"}/api/users/${targetUser.uid}`,
+      );
       if (!res.ok) return null; // fallback gracefully
       return res.json();
     },
@@ -75,10 +83,12 @@ function ProfilePage() {
 
   // Fetch real uploaded books from backend
   const { data: uploadedBooks = [], isLoading: isBooksLoading } = useQuery({
-    queryKey: ['user-books', targetUser?.uid],
+    queryKey: ["user-books", targetUser?.uid],
     queryFn: async () => {
       if (!targetUser?.uid) return [];
-      const res = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:9090'}/api/books/user/${targetUser.uid}`);
+      const res = await fetch(
+        `${import.meta.env.VITE_API_URL || "http://localhost:9090"}/api/books/user/${targetUser.uid}`,
+      );
       if (!res.ok) throw new Error("Failed to fetch user books");
       const data = await res.json();
       return data.map((b: any) => ({
@@ -89,9 +99,9 @@ function ProfilePage() {
         coverUrl: b.coverUrl,
         genre: b.genre || "Other",
         tags: b.tags || [],
-        rating: b.rating || 4.8, 
+        rating: b.rating || 4.8,
         ratingCount: b.ratingCount || Math.floor(Math.random() * 500) + 50,
-        language: b.language || "English"
+        language: b.language || "English",
       }));
     },
     enabled: !!targetUser?.uid,
@@ -101,7 +111,7 @@ function ProfilePage() {
     e.preventDefault();
     if (!targetUser) return;
     setSaving(true);
-    
+
     try {
       const formData = new FormData();
       formData.append("name", editName);
@@ -111,24 +121,27 @@ function ProfilePage() {
       } else if (!editPreview) {
         formData.append("removePhoto", "true");
       }
-      
+
       const token = await targetUser.getIdToken();
-      const res = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:9090'}/api/users/profile`, {
-        method: "PUT",
-        headers: {
-          Authorization: `Bearer ${token}`
+      const res = await fetch(
+        `${import.meta.env.VITE_API_URL || "http://localhost:9090"}/api/users/profile`,
+        {
+          method: "PUT",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+          body: formData,
         },
-        body: formData,
-      });
-      
+      );
+
       if (!res.ok) throw new Error("Failed to update profile");
-      
+
       const data = await res.json();
-      
+
       // SYNC WITH FIREBASE AUTH SO IT PERSISTS ACROSS LOGOUT/LOGIN
       const { updateProfile } = await import("firebase/auth");
       const updateData: any = {
-        displayName: data.user.name || targetUser.displayName
+        displayName: data.user.name || targetUser.displayName,
       };
       if (!editPreview && !editPhoto) {
         updateData.photoURL = "";
@@ -136,10 +149,10 @@ function ProfilePage() {
         updateData.photoURL = data.user.photoUrl || targetUser.photoURL;
       }
       await updateProfile(targetUser, updateData);
-      
+
       // Force update the Zustand store to trigger TopBar re-render immediately
       useAuthStore.getState().setUser(Object.assign({}, targetUser));
-      
+
       await refetchUser();
       setIsEditing(false);
       toast.success("Profile updated successfully!");
@@ -189,16 +202,17 @@ function ProfilePage() {
 
   const displayPhoto = dbUser?.photoUrl || targetUser.photoURL;
   const displayName = dbUser?.name || targetUser.displayName || "Lumen Reader";
-  const displayBio = dbUser?.bio || "Avid reader, curator of fine literature, and active contributor to the Notora community. Always looking for the next great story.";
+  const displayBio =
+    dbUser?.bio ||
+    "Avid reader, curator of fine literature, and active contributor to the Notora community. Always looking for the next great story.";
   const displayFollowers = dbUser?.followers || 142;
   const displayFollowing = dbUser?.following || 89;
 
-  const generatedHandle = targetUser.email ? `@${targetUser.email.split('@')[0]}` : "@reader";
+  const generatedHandle = targetUser.email ? `@${targetUser.email.split("@")[0]}` : "@reader";
   const initials = displayName.slice(0, 1).toUpperCase();
 
   return (
     <div className="animate-in fade-in duration-500 pb-20">
-      
       {/* 1. HERO BANNER - FULL WIDTH */}
       <div className="h-48 md:h-64 w-full bg-gradient-to-tr from-primary/80 via-primary/40 to-secondary/30 relative overflow-hidden">
         {/* Decorative elements in banner */}
@@ -208,7 +222,6 @@ function ProfilePage() {
 
       {/* CENTER CONTENT CONTAINER */}
       <div className="mx-auto max-w-5xl px-4 sm:px-6 md:px-8">
-        
         {/* 2. PROFILE HEADER SECTION */}
         <div className="flex justify-between items-end -mt-12 md:-mt-16 mb-4 relative z-10">
           <Avatar className="h-24 w-24 md:h-32 md:w-32 ring-4 ring-background shadow-xl">
@@ -229,23 +242,33 @@ function ProfilePage() {
                 </DialogTrigger>
                 <DialogContent className="sm:max-w-[425px] rounded-3xl">
                   <DialogHeader>
-                    <DialogTitle className="text-2xl font-display font-bold">Edit Profile</DialogTitle>
+                    <DialogTitle className="text-2xl font-display font-bold">
+                      Edit Profile
+                    </DialogTitle>
                   </DialogHeader>
                   <form onSubmit={handleUpdate} className="space-y-6 mt-4">
                     <div className="flex flex-col items-center gap-4">
                       <Label htmlFor="photo" className="relative cursor-pointer group">
                         <Avatar className="h-24 w-24 ring-2 ring-primary/20 transition-all group-hover:opacity-80 group-hover:ring-primary/50">
                           <AvatarImage src={editPreview || undefined} className="object-cover" />
-                          <AvatarFallback className="bg-muted text-3xl text-muted-foreground">{initials}</AvatarFallback>
+                          <AvatarFallback className="bg-muted text-3xl text-muted-foreground">
+                            {initials}
+                          </AvatarFallback>
                         </Avatar>
                         <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/40 rounded-full">
                           <Camera className="w-6 h-6 text-white" />
                         </div>
-                        <input id="photo" type="file" accept="image/*" className="hidden" onChange={handlePhotoSelect} />
+                        <input
+                          id="photo"
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          onChange={handlePhotoSelect}
+                        />
                       </Label>
                       {editPreview ? (
-                        <button 
-                          type="button" 
+                        <button
+                          type="button"
                           onClick={() => {
                             setEditPhoto(null);
                             setEditPreview("");
@@ -261,22 +284,34 @@ function ProfilePage() {
 
                     <div className="space-y-2">
                       <Label htmlFor="name">Display Name</Label>
-                      <Input id="name" value={editName} onChange={(e) => setEditName(e.target.value)} className="rounded-xl" />
-                    </div>
-                    
-                    <div className="space-y-2">
-                      <Label htmlFor="bio">Bio</Label>
-                      <Textarea 
-                        id="bio" 
-                        value={editBio} 
-                        onChange={(e) => setEditBio(e.target.value)} 
-                        className="rounded-xl resize-none h-24"
-                        placeholder="Tell the community about yourself..." 
+                      <Input
+                        id="name"
+                        value={editName}
+                        onChange={(e) => setEditName(e.target.value)}
+                        className="rounded-xl"
                       />
                     </div>
-                    
+
+                    <div className="space-y-2">
+                      <Label htmlFor="bio">Bio</Label>
+                      <Textarea
+                        id="bio"
+                        value={editBio}
+                        onChange={(e) => setEditBio(e.target.value)}
+                        className="rounded-xl resize-none h-24"
+                        placeholder="Tell the community about yourself..."
+                      />
+                    </div>
+
                     <div className="flex justify-end gap-2 pt-2">
-                      <Button type="button" variant="ghost" onClick={() => setIsEditing(false)} className="rounded-full">Cancel</Button>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        onClick={() => setIsEditing(false)}
+                        className="rounded-full"
+                      >
+                        Cancel
+                      </Button>
                       <Button type="submit" disabled={saving} className="rounded-full neon-glow">
                         {saving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
                         Save Changes
@@ -299,12 +334,15 @@ function ProfilePage() {
 
         {/* 3. PROFILE DETAILS */}
         <div className="mb-8">
-          <h1 className="font-display text-3xl md:text-4xl font-black">
-            {displayName}
-          </h1>
+          <h1 className="font-display text-3xl md:text-4xl font-black">{displayName}</h1>
           <p className="text-muted-foreground font-medium flex items-center gap-2 mt-1">
-            {generatedHandle} 
-            <Badge variant="secondary" className="text-[10px] uppercase tracking-widest bg-primary/10 text-primary">Creator</Badge>
+            {generatedHandle}
+            <Badge
+              variant="secondary"
+              className="text-[10px] uppercase tracking-widest bg-primary/10 text-primary"
+            >
+              Creator
+            </Badge>
           </p>
           <p className="mt-4 text-foreground/90 max-w-2xl leading-relaxed whitespace-pre-wrap">
             {displayBio}
@@ -329,20 +367,20 @@ function ProfilePage() {
         {/* 4. TABS INTERFACE */}
         <Tabs defaultValue="uploads" className="w-full">
           <TabsList className="w-full justify-start rounded-none border-b bg-transparent h-auto p-0 mb-8 overflow-x-auto flex-nowrap hide-scrollbar">
-            <TabsTrigger 
-              value="uploads" 
+            <TabsTrigger
+              value="uploads"
               className="rounded-none border-b-2 border-transparent px-6 py-4 font-medium data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:text-foreground text-muted-foreground"
             >
               Uploads ({uploadedBooks.length})
             </TabsTrigger>
-            <TabsTrigger 
-              value="reading" 
+            <TabsTrigger
+              value="reading"
               className="rounded-none border-b-2 border-transparent px-6 py-4 font-medium data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:text-foreground text-muted-foreground"
             >
               Reading List
             </TabsTrigger>
-            <TabsTrigger 
-              value="reviews" 
+            <TabsTrigger
+              value="reviews"
               className="rounded-none border-b-2 border-transparent px-6 py-4 font-medium data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:text-foreground text-muted-foreground"
             >
               Reviews
@@ -350,7 +388,10 @@ function ProfilePage() {
           </TabsList>
 
           {/* UPLOADS TAB */}
-          <TabsContent value="uploads" className="outline-none animate-in fade-in slide-in-from-bottom-2 duration-500">
+          <TabsContent
+            value="uploads"
+            className="outline-none animate-in fade-in slide-in-from-bottom-2 duration-500"
+          >
             {isBooksLoading ? (
               <div className="flex justify-center items-center h-48">
                 <Loader2 className="animate-spin text-primary w-8 h-8" />
@@ -361,7 +402,9 @@ function ProfilePage() {
                   <BookOpen className="w-8 h-8 text-primary" />
                 </div>
                 <h3 className="font-display text-xl font-bold mb-2">No uploads yet</h3>
-                <p className="text-muted-foreground mb-6 max-w-sm">Share your favorite books with the community to build your library.</p>
+                <p className="text-muted-foreground mb-6 max-w-sm">
+                  Share your favorite books with the community to build your library.
+                </p>
                 {isMe && (
                   <Button asChild className="rounded-full">
                     <Link to="/upload">Publish a Book</Link>
@@ -380,32 +423,43 @@ function ProfilePage() {
           </TabsContent>
 
           {/* READING LIST TAB (MOCKED) */}
-          <TabsContent value="reading" className="outline-none animate-in fade-in slide-in-from-bottom-2 duration-500">
-             <div className="flex flex-col items-center justify-center p-12 text-center bg-card/50 border border-border rounded-3xl">
-                <div className="w-16 h-16 bg-secondary/20 rounded-full flex items-center justify-center mb-4">
-                  <Clock className="w-8 h-8 text-secondary-foreground/60" />
-                </div>
-                <h3 className="font-display text-xl font-bold mb-2">Reading List is empty</h3>
-                <p className="text-muted-foreground mb-6 max-w-sm">Books you save for later will appear here.</p>
-                <Button asChild variant="outline" className="rounded-full">
-                  <Link to="/browse">Explore Library</Link>
-                </Button>
+          <TabsContent
+            value="reading"
+            className="outline-none animate-in fade-in slide-in-from-bottom-2 duration-500"
+          >
+            <div className="flex flex-col items-center justify-center p-12 text-center bg-card/50 border border-border rounded-3xl">
+              <div className="w-16 h-16 bg-secondary/20 rounded-full flex items-center justify-center mb-4">
+                <Clock className="w-8 h-8 text-secondary-foreground/60" />
               </div>
+              <h3 className="font-display text-xl font-bold mb-2">Reading List is empty</h3>
+              <p className="text-muted-foreground mb-6 max-w-sm">
+                Books you save for later will appear here.
+              </p>
+              <Button asChild variant="outline" className="rounded-full">
+                <Link to="/browse">Explore Library</Link>
+              </Button>
+            </div>
           </TabsContent>
 
           {/* REVIEWS TAB (MOCKED) */}
-          <TabsContent value="reviews" className="outline-none animate-in fade-in slide-in-from-bottom-2 duration-500">
-             <div className="flex flex-col items-center justify-center p-12 text-center bg-card/50 border border-border rounded-3xl">
-                <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mb-4">
-                  <Edit3 className="w-8 h-8 text-primary" />
-                </div>
-                <h3 className="font-display text-xl font-bold mb-2">No reviews yet</h3>
-                <p className="text-muted-foreground mb-6 max-w-sm">Share your thoughts on the books you've read. Your reviews help others find their next great read.</p>
+          <TabsContent
+            value="reviews"
+            className="outline-none animate-in fade-in slide-in-from-bottom-2 duration-500"
+          >
+            <div className="flex flex-col items-center justify-center p-12 text-center bg-card/50 border border-border rounded-3xl">
+              <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mb-4">
+                <Edit3 className="w-8 h-8 text-primary" />
               </div>
+              <h3 className="font-display text-xl font-bold mb-2">No reviews yet</h3>
+              <p className="text-muted-foreground mb-6 max-w-sm">
+                Share your thoughts on the books you've read. Your reviews help others find their
+                next great read.
+              </p>
+            </div>
           </TabsContent>
         </Tabs>
       </div>
-      
+
       <ImageCropperModal
         isOpen={cropperOpen}
         onClose={() => setCropperOpen(false)}

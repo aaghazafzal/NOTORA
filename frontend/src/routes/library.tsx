@@ -48,7 +48,11 @@ function ShelfGrid({ books }: { books: any[] }) {
         <p className="mt-2 text-sm text-muted-foreground max-w-sm mx-auto">
           Browse the library and add books to fill it up.
         </p>
-        <Button variant="outline" className="mt-6 rounded-full" onClick={() => window.location.href = '/browse'}>
+        <Button
+          variant="outline"
+          className="mt-6 rounded-full"
+          onClick={() => (window.location.href = "/browse")}
+        >
           Browse Library
         </Button>
       </div>
@@ -58,17 +62,19 @@ function ShelfGrid({ books }: { books: any[] }) {
     <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 mt-6">
       {books.map((b) => (
         <div key={b._id} className="flex justify-center">
-          <BookCard book={{
-            id: b._id,
-            title: b.title,
-            authorName: b.author,
-            coverUrl: b.coverUrl,
-            genre: b.genre || "Other",
-            tags: b.tags || [],
-            rating: 4.8,
-            ratingCount: 152,
-            language: b.language || "English"
-          }} />
+          <BookCard
+            book={{
+              id: b._id,
+              title: b.title,
+              authorName: b.author,
+              coverUrl: b.coverUrl,
+              genre: b.genre || "Other",
+              tags: b.tags || [],
+              rating: 4.8,
+              ratingCount: 152,
+              language: b.language || "English",
+            }}
+          />
         </div>
       ))}
     </div>
@@ -90,12 +96,15 @@ function LibraryPage() {
   }, []);
 
   const { data: library, isLoading } = useQuery({
-    queryKey: ['library', user?.uid],
+    queryKey: ["library", user?.uid],
     queryFn: async () => {
       const token = await user!.getIdToken();
-      const res = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:9090'}/api/library`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      const res = await fetch(
+        `${import.meta.env.VITE_API_URL || "http://localhost:9090"}/api/library`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        },
+      );
       if (!res.ok) throw new Error("Failed to fetch library");
       return res.json();
     },
@@ -116,11 +125,17 @@ function LibraryPage() {
         <div className="mb-6 rounded-full bg-primary/10 p-6">
           <LogIn className="h-12 w-12 text-primary" />
         </div>
-        <h1 className="font-display text-3xl font-bold tracking-tight">Sign in to view your library</h1>
+        <h1 className="font-display text-3xl font-bold tracking-tight">
+          Sign in to view your library
+        </h1>
         <p className="mt-2 max-w-sm text-muted-foreground">
-          Keep track of your reading progress, organize your favorite books, and manage your shelves across all devices.
+          Keep track of your reading progress, organize your favorite books, and manage your shelves
+          across all devices.
         </p>
-        <Button className="mt-8 rounded-full px-8" onClick={() => window.location.href = '/login'}>
+        <Button
+          className="mt-8 rounded-full px-8"
+          onClick={() => (window.location.href = "/login")}
+        >
           Sign In
         </Button>
       </div>
@@ -132,7 +147,7 @@ function LibraryPage() {
   const favorites = library?.shelves?.favorites || [];
   const completed = library?.shelves?.completed || [];
   const toRead = library?.shelves?.["to-read"] || [];
-  
+
   const customShelves = library?.customShelves || {};
   const continueReading = reading.filter((b: any) => library?.progress?.[b._id]);
 
@@ -176,19 +191,22 @@ function LibraryPage() {
                 onClick={async () => {
                   if (newShelf.trim()) {
                     const token = await user!.getIdToken();
-                    await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:9090'}/api/library/shelves`, {
-                      method: "POST",
-                      headers: { 
-                        "Content-Type": "application/json",
-                        Authorization: `Bearer ${token}` 
+                    await fetch(
+                      `${import.meta.env.VITE_API_URL || "http://localhost:9090"}/api/library/shelves`,
+                      {
+                        method: "POST",
+                        headers: {
+                          "Content-Type": "application/json",
+                          Authorization: `Bearer ${token}`,
+                        },
+                        body: JSON.stringify({
+                          targetShelf: newShelf.trim(),
+                          custom: true,
+                          action: "create",
+                        }),
                       },
-                      body: JSON.stringify({
-                        targetShelf: newShelf.trim(),
-                        custom: true,
-                        action: 'create'
-                      })
-                    });
-                    queryClient.invalidateQueries({ queryKey: ['library'] });
+                    );
+                    queryClient.invalidateQueries({ queryKey: ["library"] });
                     setNewShelf("");
                     setOpen(false);
                   }
@@ -203,25 +221,27 @@ function LibraryPage() {
 
       {continueReading.length > 0 && (
         <section className="mb-12">
-          <h2 className="mb-6 font-display text-2xl font-bold tracking-tight">
-            Continue Reading
-          </h2>
+          <h2 className="mb-6 font-display text-2xl font-bold tracking-tight">Continue Reading</h2>
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6">
             {continueReading.map((book: any) => (
               <div key={book._id} className="flex flex-col items-center">
-                <BookCard book={{
-                  id: book._id,
-                  title: book.title,
-                  authorName: book.author,
-                  coverUrl: book.coverUrl,
-                  genre: book.genre || "Other",
-                  tags: book.tags || [],
-                  rating: 4.8,
-                  ratingCount: 152,
-                  language: book.language || "English"
-                }} />
+                <BookCard
+                  book={{
+                    id: book._id,
+                    title: book.title,
+                    authorName: book.author,
+                    coverUrl: book.coverUrl,
+                    genre: book.genre || "Other",
+                    tags: book.tags || [],
+                    rating: 4.8,
+                    ratingCount: 152,
+                    language: book.language || "English",
+                  }}
+                />
                 {library.progress[book._id] && (
-                  <p className="mt-2 text-xs font-medium text-primary">Page {library.progress[book._id]}</p>
+                  <p className="mt-2 text-xs font-medium text-primary">
+                    Page {library.progress[book._id]}
+                  </p>
                 )}
               </div>
             ))}
@@ -232,14 +252,21 @@ function LibraryPage() {
       <Tabs defaultValue="reading" className="w-full">
         <TabsList className="flex flex-wrap h-auto bg-transparent gap-2 mb-8">
           {SHELVES.map((s) => {
-            const count = (s.id === 'reading' ? reading : 
-                           s.id === 'favorites' ? favorites : 
-                           s.id === 'completed' ? completed : 
-                           s.id === 'to-read' ? toRead : []).length;
-            
+            const count = (
+              s.id === "reading"
+                ? reading
+                : s.id === "favorites"
+                  ? favorites
+                  : s.id === "completed"
+                    ? completed
+                    : s.id === "to-read"
+                      ? toRead
+                      : []
+            ).length;
+
             return (
-              <TabsTrigger 
-                key={s.id} 
+              <TabsTrigger
+                key={s.id}
                 value={s.id}
                 className="rounded-full px-6 py-3 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md border border-transparent data-[state=inactive]:border-border/50 data-[state=inactive]:hover:bg-accent/50 transition-all"
               >
@@ -251,10 +278,10 @@ function LibraryPage() {
               </TabsTrigger>
             );
           })}
-          
+
           {Object.keys(customShelves).map((shelfName) => (
-            <TabsTrigger 
-              key={shelfName} 
+            <TabsTrigger
+              key={shelfName}
               value={shelfName}
               className="rounded-full px-6 py-3 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md border border-transparent data-[state=inactive]:border-border/50 data-[state=inactive]:hover:bg-accent/50 transition-all"
             >
@@ -267,21 +294,37 @@ function LibraryPage() {
           ))}
         </TabsList>
 
-        <TabsContent value="reading" className="focus-visible:outline-none focus-visible:ring-0 mt-0">
+        <TabsContent
+          value="reading"
+          className="focus-visible:outline-none focus-visible:ring-0 mt-0"
+        >
           <ShelfGrid books={reading} />
         </TabsContent>
-        <TabsContent value="favorites" className="focus-visible:outline-none focus-visible:ring-0 mt-0">
+        <TabsContent
+          value="favorites"
+          className="focus-visible:outline-none focus-visible:ring-0 mt-0"
+        >
           <ShelfGrid books={favorites} />
         </TabsContent>
-        <TabsContent value="completed" className="focus-visible:outline-none focus-visible:ring-0 mt-0">
+        <TabsContent
+          value="completed"
+          className="focus-visible:outline-none focus-visible:ring-0 mt-0"
+        >
           <ShelfGrid books={completed} />
         </TabsContent>
-        <TabsContent value="to-read" className="focus-visible:outline-none focus-visible:ring-0 mt-0">
+        <TabsContent
+          value="to-read"
+          className="focus-visible:outline-none focus-visible:ring-0 mt-0"
+        >
           <ShelfGrid books={toRead} />
         </TabsContent>
-        
+
         {Object.entries(customShelves).map(([shelfName, books]: [string, any]) => (
-          <TabsContent key={shelfName} value={shelfName} className="focus-visible:outline-none focus-visible:ring-0 mt-0">
+          <TabsContent
+            key={shelfName}
+            value={shelfName}
+            className="focus-visible:outline-none focus-visible:ring-0 mt-0"
+          >
             <ShelfGrid books={books} />
           </TabsContent>
         ))}

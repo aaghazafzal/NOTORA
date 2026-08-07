@@ -86,10 +86,7 @@ export const useAppStore = create<AppState>()(
         }),
       addCustomShelf: (name) =>
         set((s) => ({
-          customShelves: [
-            ...s.customShelves,
-            { id: `cs_${Date.now()}`, name, bookIds: [] },
-          ],
+          customShelves: [...s.customShelves, { id: `cs_${Date.now()}`, name, bookIds: [] }],
         })),
       toggleCustomShelf: (shelfId, bookId) =>
         set((s) => ({
@@ -101,21 +98,18 @@ export const useAppStore = create<AppState>()(
                     ? cs.bookIds.filter((id) => id !== bookId)
                     : [...cs.bookIds, bookId],
                 }
-              : cs
+              : cs,
           ),
         })),
 
       progress: {},
-      setProgress: (bookId, page) =>
-        set((s) => ({ progress: { ...s.progress, [bookId]: page } })),
+      setProgress: (bookId, page) => set((s) => ({ progress: { ...s.progress, [bookId]: page } })),
 
       bookmarks: [],
       addBookmark: (b) => set((s) => ({ bookmarks: [...s.bookmarks, b] })),
       removeBookmark: (bookId, page) =>
         set((s) => ({
-          bookmarks: s.bookmarks.filter(
-            (bm) => !(bm.bookId === bookId && bm.page === page)
-          ),
+          bookmarks: s.bookmarks.filter((bm) => !(bm.bookId === bookId && bm.page === page)),
         })),
 
       highlights: [],
@@ -135,6 +129,6 @@ export const useAppStore = create<AppState>()(
     }),
     {
       name: "notora-store",
-    }
-  )
+    },
+  ),
 );

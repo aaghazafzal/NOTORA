@@ -6,21 +6,13 @@ import { REVIEWS } from "@/data/reviews";
 import { MODERATION_QUEUE } from "@/data/moderation";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import {
-  Tabs,
-  TabsList,
-  TabsTrigger,
-  TabsContent,
-} from "@/components/ui/tabs";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { useState } from "react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/admin")({
   head: () => ({
-    meta: [
-      { title: "Admin — Notora" },
-      { name: "robots", content: "noindex" },
-    ],
+    meta: [{ title: "Admin — Notora" }, { name: "robots", content: "noindex" }],
   }),
   component: AdminPage,
 });
@@ -41,26 +33,19 @@ function AdminPage() {
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 sm:py-10">
-      <h1 className="font-display text-3xl font-black sm:text-4xl">
-        Admin dashboard
-      </h1>
+      <h1 className="font-display text-3xl font-black sm:text-4xl">Admin dashboard</h1>
       <p className="mt-1 text-sm text-muted-foreground">
         Site health, moderation, and takedown notices.
       </p>
 
       <div className="mt-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         {stats.map((s) => (
-          <div
-            key={s.label}
-            className="rounded-2xl border border-border bg-card p-5"
-          >
+          <div key={s.label} className="rounded-2xl border border-border bg-card p-5">
             <div className="flex items-center gap-2 text-xs uppercase tracking-wider text-muted-foreground">
               <s.icon className="h-4 w-4" />
               {s.label}
             </div>
-            <div className="mt-2 font-display text-3xl font-black">
-              {s.value.toLocaleString()}
-            </div>
+            <div className="mt-2 font-display text-3xl font-black">{s.value.toLocaleString()}</div>
           </div>
         ))}
       </div>
@@ -73,14 +58,9 @@ function AdminPage() {
         {(["pending", "handled"] as const).map((tab) => (
           <TabsContent key={tab} value={tab} className="mt-4 space-y-3">
             {queue
-              .filter((q) =>
-                tab === "pending" ? q.status === "pending" : q.status !== "pending"
-              )
+              .filter((q) => (tab === "pending" ? q.status === "pending" : q.status !== "pending"))
               .map((q) => (
-                <div
-                  key={q.id}
-                  className="rounded-2xl border border-border bg-card p-4"
-                >
+                <div key={q.id} className="rounded-2xl border border-border bg-card p-4">
                   <div className="flex flex-wrap items-start justify-between gap-3">
                     <div className="min-w-0">
                       <div className="flex items-center gap-2 text-xs uppercase tracking-wider text-muted-foreground">
@@ -89,9 +69,7 @@ function AdminPage() {
                         </Badge>
                         <span>{q.submittedAt}</span>
                       </div>
-                      <div className="mt-2 font-display font-semibold">
-                        {q.title}
-                      </div>
+                      <div className="mt-2 font-display font-semibold">{q.title}</div>
                       <div className="mt-1 text-xs text-muted-foreground">
                         by {q.submittedBy}
                         {q.reason && ` — ${q.reason}`}
@@ -99,10 +77,7 @@ function AdminPage() {
                     </div>
                     {q.status === "pending" ? (
                       <div className="flex gap-2">
-                        <Button
-                          size="sm"
-                          onClick={() => act(q.id, "approved")}
-                        >
+                        <Button size="sm" onClick={() => act(q.id, "approved")}>
                           <Check className="mr-1 h-4 w-4" /> Approve
                         </Button>
                         <Button

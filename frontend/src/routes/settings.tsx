@@ -31,9 +31,7 @@ function SettingsPage() {
   return (
     <div className="mx-auto max-w-3xl px-4 py-6 sm:px-6 sm:py-10">
       <h1 className="font-display text-3xl font-black sm:text-4xl">Settings</h1>
-      <p className="mt-1 text-sm text-muted-foreground">
-        Tune the app to fit how you read.
-      </p>
+      <p className="mt-1 text-sm text-muted-foreground">Tune the app to fit how you read.</p>
 
       <section className="mt-10">
         <h2 className="font-display text-xl font-bold">Appearance</h2>
@@ -46,9 +44,7 @@ function SettingsPage() {
               key={t.id}
               onClick={() => setTheme(t.id)}
               className={`flex items-center gap-3 rounded-2xl border p-3 text-left transition-colors ${
-                theme === t.id
-                  ? "border-primary bg-accent/40"
-                  : "border-border hover:bg-accent/20"
+                theme === t.id ? "border-primary bg-accent/40" : "border-border hover:bg-accent/20"
               }`}
             >
               <div className="flex h-10 w-20 overflow-hidden rounded-lg ring-1 ring-border">
@@ -58,13 +54,9 @@ function SettingsPage() {
               </div>
               <div className="flex-1">
                 <div className="font-display font-semibold">{t.name}</div>
-                <div className="text-xs text-muted-foreground capitalize">
-                  {t.mode}
-                </div>
+                <div className="text-xs text-muted-foreground capitalize">{t.mode}</div>
               </div>
-              {theme === t.id && (
-                <Check className="h-5 w-5 text-primary" />
-              )}
+              {theme === t.id && <Check className="h-5 w-5 text-primary" />}
             </button>
           ))}
         </div>
@@ -108,10 +100,7 @@ function SettingsPage() {
               <option>Japanese</option>
             </select>
           </div>
-          <Button
-            onClick={() => toast.success("Settings saved")}
-            className="rounded-full"
-          >
+          <Button onClick={() => toast.success("Settings saved")} className="rounded-full">
             Save changes
           </Button>
         </div>
@@ -140,18 +129,14 @@ function SettingsPage() {
           <div className="flex items-center justify-between">
             <div>
               <div className="font-medium">Two-factor authentication</div>
-              <div className="text-xs text-muted-foreground">
-                Extra step at sign-in.
-              </div>
+              <div className="text-xs text-muted-foreground">Extra step at sign-in.</div>
             </div>
             <Switch />
           </div>
           <div className="flex items-center justify-between">
             <div>
               <div className="font-medium">Session sync across devices</div>
-              <div className="text-xs text-muted-foreground">
-                Continue reading anywhere.
-              </div>
+              <div className="text-xs text-muted-foreground">Continue reading anywhere.</div>
             </div>
             <Switch defaultChecked />
           </div>

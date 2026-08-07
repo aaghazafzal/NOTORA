@@ -7,8 +7,7 @@ import { BottomNav } from "./BottomNav";
 
 export function AppShell({ children }: { children: ReactNode }) {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
-  const immersive =
-    pathname.startsWith("/read/") || pathname.startsWith("/auth/");
+  const immersive = pathname.startsWith("/read/") || pathname.startsWith("/auth/");
 
   if (immersive) {
     return <div className="min-h-dvh bg-background">{children}</div>;

@@ -320,7 +320,10 @@ const EXTRA_GENRES = [
 ];
 
 const EXTRA: Omit<Book, "chapters">[] = EXTRA_TITLES.map((t, i) => {
-  const slug = t.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+  const slug = t
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/(^-|-$)/g, "");
   return {
     id: `b_${slug.replace(/-/g, "_").slice(0, 24)}`,
     slug,
@@ -338,7 +341,9 @@ const EXTRA: Omit<Book, "chapters">[] = EXTRA_TITLES.map((t, i) => {
     rating: 3.6 + ((i * 13) % 14) / 10,
     ratingCount: 40 + ((i * 91) % 900),
     downloads: 200 + ((i * 313) % 4000),
-    formats: (i % 3 === 0 ? ["epub", "pdf"] : i % 3 === 1 ? ["epub"] : ["epub", "pdf", "txt"]) as ("epub" | "pdf" | "txt")[],
+    formats: (i % 3 === 0 ? ["epub", "pdf"] : i % 3 === 1 ? ["epub"] : ["epub", "pdf", "txt"]) as (
+      "epub" | "pdf" | "txt"
+    )[],
   };
 });
 

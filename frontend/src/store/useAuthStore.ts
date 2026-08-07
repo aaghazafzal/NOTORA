@@ -21,14 +21,16 @@ onAuthStateChanged(auth, async (user) => {
   if (user) {
     try {
       // Sync MongoDB profile with Firebase Auth (backward compatibility for old uploads)
-      const res = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:9090'}/api/users/${user.uid}`);
+      const res = await fetch(
+        `${import.meta.env.VITE_API_URL || "http://localhost:9090"}/api/users/${user.uid}`,
+      );
       if (res.ok) {
         const dbUser = await res.json();
         if (dbUser.photoUrl && user.photoURL !== dbUser.photoUrl) {
           const { updateProfile } = await import("firebase/auth");
-          await updateProfile(user, { 
-            photoURL: dbUser.photoUrl, 
-            displayName: dbUser.name || user.displayName 
+          await updateProfile(user, {
+            photoURL: dbUser.photoUrl,
+            displayName: dbUser.name || user.displayName,
           });
           // Clone the user to force a state update with the new photoURL
           user = Object.assign({}, user) as User;

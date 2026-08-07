@@ -23,13 +23,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-} from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { ThemeToggle } from "./ThemeToggle";
 import { NOTIFICATIONS } from "@/data/notifications";
 import { useAuthStore } from "@/store/useAuthStore";
@@ -51,15 +45,9 @@ export function TopBar() {
   return (
     <header className="sticky top-0 z-30 flex h-14 items-center gap-2 border-b border-border bg-background/80 px-3 backdrop-blur-md sm:px-4">
       <SidebarTrigger className="hidden md:inline-flex" />
-      <Link
-        to="/"
-        className="flex items-center gap-2 md:hidden"
-        aria-label="Notora home"
-      >
+      <Link to="/" className="flex items-center gap-2 md:hidden" aria-label="Notora home">
         <div className="grid h-7 w-7 place-items-center rounded-lg bg-gradient-to-br from-primary to-secondary">
-          <span className="font-display text-xs font-bold text-primary-foreground">
-            L
-          </span>
+          <span className="font-display text-xs font-bold text-primary-foreground">L</span>
         </div>
         <span className="font-display text-base font-bold">Notora</span>
       </Link>
@@ -88,11 +76,7 @@ export function TopBar() {
       </form>
 
       <div className="ml-auto flex items-center gap-1">
-        <Link
-          to="/browse"
-          className="sm:hidden"
-          aria-label="Search"
-        >
+        <Link to="/browse" className="sm:hidden" aria-label="Search">
           <Button variant="ghost" size="icon" className="rounded-full" asChild>
             <span>
               <Search className="h-5 w-5" />
@@ -130,12 +114,8 @@ export function TopBar() {
                     }`}
                   >
                     <div className="text-sm font-semibold">{n.title}</div>
-                    <div className="mt-1 text-sm text-muted-foreground">
-                      {n.body}
-                    </div>
-                    <div className="mt-2 text-xs text-muted-foreground">
-                      {n.createdAt}
-                    </div>
+                    <div className="mt-1 text-sm text-muted-foreground">{n.body}</div>
+                    <div className="mt-2 text-xs text-muted-foreground">{n.createdAt}</div>
                   </li>
                 ))}
               </ul>
@@ -157,7 +137,9 @@ export function TopBar() {
                 <Avatar className="h-8 w-8">
                   <AvatarImage src={user.photoURL || undefined} className="object-cover" />
                   <AvatarFallback className="bg-secondary text-secondary-foreground">
-                    {user.displayName ? user.displayName.slice(0, 1).toUpperCase() : user.email?.slice(0, 1).toUpperCase()}
+                    {user.displayName
+                      ? user.displayName.slice(0, 1).toUpperCase()
+                      : user.email?.slice(0, 1).toUpperCase()}
                   </AvatarFallback>
                 </Avatar>
               </Button>
@@ -177,11 +159,11 @@ export function TopBar() {
                 <Link to="/settings">Settings</Link>
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem 
+              <DropdownMenuItem
                 onSelect={(e) => {
                   e.preventDefault();
                   setShowSignOutDialog(true);
-                }} 
+                }}
                 className="text-red-500 focus:text-red-500 cursor-pointer"
               >
                 Sign out
@@ -198,19 +180,23 @@ export function TopBar() {
             </Button>
           </div>
         )}
-        
+
         {/* Sign Out Confirmation Dialog */}
         <AlertDialog open={showSignOutDialog} onOpenChange={setShowSignOutDialog}>
           <AlertDialogContent>
             <AlertDialogHeader>
               <AlertDialogTitle>Sign out</AlertDialogTitle>
               <AlertDialogDescription>
-                Are you sure you want to sign out? You will need to sign in again to access your library and profile.
+                Are you sure you want to sign out? You will need to sign in again to access your
+                library and profile.
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
               <AlertDialogCancel>Cancel</AlertDialogCancel>
-              <AlertDialogAction onClick={handleSignOut} className="bg-red-500 hover:bg-red-600 text-white">
+              <AlertDialogAction
+                onClick={handleSignOut}
+                className="bg-red-500 hover:bg-red-600 text-white"
+              >
                 Sign out
               </AlertDialogAction>
             </AlertDialogFooter>

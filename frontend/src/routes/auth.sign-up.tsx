@@ -7,17 +7,19 @@ import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useState } from "react";
 import { auth, googleProvider, getFirebaseErrorMessage } from "@/lib/firebase";
-import { createUserWithEmailAndPassword, signInWithPopup, updateProfile, User } from "firebase/auth";
+import {
+  createUserWithEmailAndPassword,
+  signInWithPopup,
+  updateProfile,
+  User,
+} from "firebase/auth";
 import { toast } from "sonner";
 import { useAuthStore } from "@/store/useAuthStore";
 import { ImageCropperModal } from "@/components/ui/image-cropper";
 
 export const Route = createFileRoute("/auth/sign-up")({
   head: () => ({
-    meta: [
-      { title: "Sign up — Notora" },
-      { name: "robots", content: "noindex" },
-    ],
+    meta: [{ title: "Sign up — Notora" }, { name: "robots", content: "noindex" }],
   }),
   component: SignUpPage,
 });
@@ -52,19 +54,19 @@ function SignUpPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  
+
   // Onboarding state
   const [bio, setBio] = useState("");
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [photoPreview, setPhotoPreview] = useState("");
   const [cropperOpen, setCropperOpen] = useState(false);
   const [cropperSrc, setCropperSrc] = useState("");
-  
+
   const [isLoading, setIsLoading] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const [authUser, setAuthUser] = useState<User | null>(null);
   const navigate = useNavigate();
-  
+
   // Access global store to ensure it tracks the new user immediately
   const { setUser } = useAuthStore();
 
@@ -90,7 +92,7 @@ function SignUpPage() {
       const userCredential = await signInWithPopup(auth, googleProvider);
       setAuthUser(userCredential.user);
       setUser(userCredential.user);
-      
+
       // Pre-fill name and photo from Google
       if (userCredential.user.displayName) {
         setName(userCredential.user.displayName);
@@ -98,7 +100,7 @@ function SignUpPage() {
       if (userCredential.user.photoURL) {
         setPhotoPreview(userCredential.user.photoURL);
       }
-      
+
       setStep(2); // Go to onboarding
     } catch (error: any) {
       toast.error(getFirebaseErrorMessage(error));
@@ -124,7 +126,7 @@ function SignUpPage() {
   const handleCompleteProfile = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!authUser) return;
-    
+
     setIsLoading(true);
     try {
       const formData = new FormData();
@@ -133,18 +135,21 @@ function SignUpPage() {
       if (photoFile) {
         formData.append("photo", photoFile);
       }
-      
+
       const token = await authUser.getIdToken();
-      const res = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:9090'}/api/users/profile`, {
-        method: "PUT",
-        headers: {
-          Authorization: `Bearer ${token}`
+      const res = await fetch(
+        `${import.meta.env.VITE_API_URL || "http://localhost:9090"}/api/users/profile`,
+        {
+          method: "PUT",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+          body: formData,
         },
-        body: formData,
-      });
-      
+      );
+
       if (!res.ok) throw new Error("Failed to complete profile");
-      
+
       toast.success("Welcome to Notora!");
       navigate({ to: "/" });
     } catch (error: any) {
@@ -162,23 +167,24 @@ function SignUpPage() {
       <div className="hidden lg:flex flex-col justify-between bg-muted/30 border-r border-border p-12 relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-primary/20 via-transparent to-secondary/20 opacity-50 mix-blend-screen" />
         <div className="absolute -left-1/4 -top-1/4 h-[800px] w-[800px] rounded-full bg-primary/20 blur-[120px]" />
-        
+
         <div className="relative z-10 flex items-center gap-3">
           <div className="grid h-12 w-12 place-items-center rounded-2xl bg-gradient-to-br from-primary to-secondary shadow-lg">
             <BookOpen className="h-6 w-6 text-primary-foreground" />
           </div>
           <span className="font-display text-3xl font-black text-foreground">Notora</span>
         </div>
-        
+
         <div className="relative z-10 max-w-lg">
           <h2 className="font-display text-4xl font-bold leading-tight text-foreground lg:text-5xl">
             A universe of stories awaits you.
           </h2>
           <p className="mt-6 text-lg text-muted-foreground">
-            Sign up to discover new worlds, connect with authors, and curate your own digital library seamlessly.
+            Sign up to discover new worlds, connect with authors, and curate your own digital
+            library seamlessly.
           </p>
         </div>
-        
+
         <div className="relative z-10 text-sm text-muted-foreground">
           © {new Date().getFullYear()} Notora. All rights reserved.
         </div>
@@ -186,9 +192,9 @@ function SignUpPage() {
 
       {/* Right Panel - Form (Mobile & Desktop) */}
       <div className="flex items-center justify-center bg-background p-6 sm:p-12 lg:p-16 relative">
-        <Button 
+        <Button
           asChild
-          variant="ghost" 
+          variant="ghost"
           className="absolute left-4 top-4 sm:left-8 sm:top-8 gap-2 text-muted-foreground hover:text-foreground hidden lg:flex"
         >
           <Link to="/">
@@ -197,9 +203,9 @@ function SignUpPage() {
           </Link>
         </Button>
 
-        <Button 
+        <Button
           asChild
-          variant="ghost" 
+          variant="ghost"
           size="icon"
           className="absolute left-4 top-4 text-muted-foreground hover:text-foreground lg:hidden"
         >
@@ -217,21 +223,23 @@ function SignUpPage() {
             </div>
             <span className="font-display text-2xl font-black">Notora</span>
           </Link>
-          
+
           <div className="transition-all duration-500">
             {step === 1 && (
               <div className="animate-in fade-in slide-in-from-left-4 duration-500">
                 <div className="text-center lg:text-left">
-                  <h1 className="font-display text-3xl font-bold tracking-tight">Create an account</h1>
+                  <h1 className="font-display text-3xl font-bold tracking-tight">
+                    Create an account
+                  </h1>
                   <p className="mt-2 text-sm text-muted-foreground">
                     Join the community of readers.
                   </p>
                 </div>
-                
+
                 <div className="mt-8 space-y-4">
-                  <Button 
-                    variant="outline" 
-                    className="w-full rounded-xl py-6 border-border bg-card hover:bg-accent hover:text-accent-foreground text-sm font-medium transition-all" 
+                  <Button
+                    variant="outline"
+                    className="w-full rounded-xl py-6 border-border bg-card hover:bg-accent hover:text-accent-foreground text-sm font-medium transition-all"
                     onClick={handleGoogleSignUp}
                     disabled={isGoogleLoading || isLoading}
                   >
@@ -243,16 +251,18 @@ function SignUpPage() {
                     Continue with Google
                   </Button>
                 </div>
-                
+
                 <div className="my-8 flex items-center gap-3 text-xs text-muted-foreground">
                   <div className="h-px flex-1 bg-border" />
                   <span className="uppercase tracking-wider">or sign up with email</span>
                   <div className="h-px flex-1 bg-border" />
                 </div>
-                
+
                 <form className="space-y-5" onSubmit={handleEmailSignUp}>
                   <div className="space-y-1.5">
-                    <Label htmlFor="n" className="text-sm font-medium">Name</Label>
+                    <Label htmlFor="n" className="text-sm font-medium">
+                      Name
+                    </Label>
                     <Input
                       id="n"
                       required
@@ -263,7 +273,9 @@ function SignUpPage() {
                     />
                   </div>
                   <div className="space-y-1.5">
-                    <Label htmlFor="e" className="text-sm font-medium">Email address</Label>
+                    <Label htmlFor="e" className="text-sm font-medium">
+                      Email address
+                    </Label>
                     <Input
                       id="e"
                       type="email"
@@ -275,7 +287,9 @@ function SignUpPage() {
                     />
                   </div>
                   <div className="space-y-1.5">
-                    <Label htmlFor="p" className="text-sm font-medium">Password</Label>
+                    <Label htmlFor="p" className="text-sm font-medium">
+                      Password
+                    </Label>
                     <div className="relative">
                       <Input
                         id="p"
@@ -306,11 +320,19 @@ function SignUpPage() {
                       Must be at least 6 characters long.
                     </p>
                   </div>
-                  <Button type="submit" className="w-full rounded-xl h-12 neon-glow font-bold text-base mt-2" disabled={isLoading || isGoogleLoading}>
-                    {isLoading ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : "Create account"}
+                  <Button
+                    type="submit"
+                    className="w-full rounded-xl h-12 neon-glow font-bold text-base mt-2"
+                    disabled={isLoading || isGoogleLoading}
+                  >
+                    {isLoading ? (
+                      <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                    ) : (
+                      "Create account"
+                    )}
                   </Button>
                 </form>
-                
+
                 <p className="mt-8 text-center text-sm text-muted-foreground">
                   Already have an account?{" "}
                   <Link to="/auth/sign-in" className="font-semibold text-primary hover:underline">
@@ -323,12 +345,14 @@ function SignUpPage() {
             {step === 2 && (
               <div className="animate-in fade-in slide-in-from-right-4 duration-500">
                 <div className="text-center lg:text-left mb-8">
-                  <h1 className="font-display text-3xl font-bold tracking-tight">Complete your profile</h1>
+                  <h1 className="font-display text-3xl font-bold tracking-tight">
+                    Complete your profile
+                  </h1>
                   <p className="mt-2 text-sm text-muted-foreground">
                     Let the community know a bit about you.
                   </p>
                 </div>
-                
+
                 <form onSubmit={handleCompleteProfile} className="space-y-6">
                   <div className="flex flex-col items-center lg:items-start gap-3">
                     <Label htmlFor="photo" className="relative cursor-pointer group">
@@ -341,11 +365,17 @@ function SignUpPage() {
                       <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/40 rounded-full">
                         <Camera className="w-6 h-6 text-white" />
                       </div>
-                      <input id="photo" type="file" accept="image/*" className="hidden" onChange={handlePhotoSelect} />
+                      <input
+                        id="photo"
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={handlePhotoSelect}
+                      />
                     </Label>
                     {photoPreview ? (
-                      <button 
-                        type="button" 
+                      <button
+                        type="button"
                         onClick={() => {
                           setPhotoFile(null);
                           setPhotoPreview("");
@@ -355,12 +385,16 @@ function SignUpPage() {
                         Click to remove photo
                       </button>
                     ) : (
-                      <p className="text-xs text-muted-foreground font-medium">Add a profile photo</p>
+                      <p className="text-xs text-muted-foreground font-medium">
+                        Add a profile photo
+                      </p>
                     )}
                   </div>
 
                   <div className="space-y-1.5">
-                    <Label htmlFor="displayName" className="text-sm font-medium">Display Name</Label>
+                    <Label htmlFor="displayName" className="text-sm font-medium">
+                      Display Name
+                    </Label>
                     <Input
                       id="displayName"
                       required
@@ -369,9 +403,11 @@ function SignUpPage() {
                       className="rounded-xl h-12 bg-background border-border focus-visible:ring-primary"
                     />
                   </div>
-                  
+
                   <div className="space-y-1.5">
-                    <Label htmlFor="bio" className="text-sm font-medium">Bio <span className="text-muted-foreground font-normal">(Optional)</span></Label>
+                    <Label htmlFor="bio" className="text-sm font-medium">
+                      Bio <span className="text-muted-foreground font-normal">(Optional)</span>
+                    </Label>
                     <Textarea
                       id="bio"
                       value={bio}
@@ -381,8 +417,14 @@ function SignUpPage() {
                     />
                   </div>
 
-                  <Button type="submit" className="w-full rounded-xl h-12 neon-glow font-bold text-base mt-4" disabled={isLoading}>
-                    {isLoading ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : (
+                  <Button
+                    type="submit"
+                    className="w-full rounded-xl h-12 neon-glow font-bold text-base mt-4"
+                    disabled={isLoading}
+                  >
+                    {isLoading ? (
+                      <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                    ) : (
                       <>
                         <Check className="w-5 h-5 mr-2" />
                         Complete Setup

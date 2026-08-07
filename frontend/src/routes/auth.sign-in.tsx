@@ -10,10 +10,7 @@ import { toast } from "sonner";
 
 export const Route = createFileRoute("/auth/sign-in")({
   head: () => ({
-    meta: [
-      { title: "Sign in — Notora" },
-      { name: "robots", content: "noindex" },
-    ],
+    meta: [{ title: "Sign in — Notora" }, { name: "robots", content: "noindex" }],
   }),
   component: SignInPage,
 });
@@ -83,23 +80,24 @@ function SignInPage() {
       <div className="hidden lg:flex flex-col justify-between bg-muted/30 border-r border-border p-12 relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-primary/20 via-transparent to-secondary/20 opacity-50 mix-blend-screen" />
         <div className="absolute -left-1/4 -top-1/4 h-[800px] w-[800px] rounded-full bg-primary/20 blur-[120px]" />
-        
+
         <div className="relative z-10 flex items-center gap-3">
           <div className="grid h-12 w-12 place-items-center rounded-2xl bg-gradient-to-br from-primary to-secondary shadow-lg">
             <BookOpen className="h-6 w-6 text-primary-foreground" />
           </div>
           <span className="font-display text-3xl font-black text-foreground">Notora</span>
         </div>
-        
+
         <div className="relative z-10 max-w-lg">
           <h2 className="font-display text-4xl font-bold leading-tight text-foreground lg:text-5xl">
             Dive back into your favorite stories.
           </h2>
           <p className="mt-6 text-lg text-muted-foreground">
-            Join thousands of readers discovering and sharing the world's best digital books on a platform designed for the modern reader.
+            Join thousands of readers discovering and sharing the world's best digital books on a
+            platform designed for the modern reader.
           </p>
         </div>
-        
+
         <div className="relative z-10 text-sm text-muted-foreground">
           © {new Date().getFullYear()} Notora. All rights reserved.
         </div>
@@ -107,9 +105,9 @@ function SignInPage() {
 
       {/* Right Panel - Form (Mobile & Desktop) */}
       <div className="flex items-center justify-center bg-background p-6 sm:p-12 lg:p-16 relative">
-        <Button 
+        <Button
           asChild
-          variant="ghost" 
+          variant="ghost"
           className="absolute left-4 top-4 sm:left-8 sm:top-8 gap-2 text-muted-foreground hover:text-foreground hidden lg:flex"
         >
           <Link to="/">
@@ -118,9 +116,9 @@ function SignInPage() {
           </Link>
         </Button>
 
-        <Button 
+        <Button
           asChild
-          variant="ghost" 
+          variant="ghost"
           size="icon"
           className="absolute left-4 top-4 text-muted-foreground hover:text-foreground lg:hidden"
         >
@@ -147,9 +145,9 @@ function SignInPage() {
           </div>
 
           <div className="mt-8 space-y-4">
-            <Button 
-              variant="outline" 
-              className="w-full rounded-xl py-6 border-border bg-card hover:bg-accent hover:text-accent-foreground text-sm font-medium transition-all" 
+            <Button
+              variant="outline"
+              className="w-full rounded-xl py-6 border-border bg-card hover:bg-accent hover:text-accent-foreground text-sm font-medium transition-all"
               onClick={handleGoogleSignIn}
               disabled={isGoogleLoading || isLoading}
             >
@@ -170,7 +168,9 @@ function SignInPage() {
 
           <form className="space-y-5" onSubmit={handleEmailSignIn}>
             <div className="space-y-1.5">
-              <Label htmlFor="e" className="text-sm font-medium">Email address</Label>
+              <Label htmlFor="e" className="text-sm font-medium">
+                Email address
+              </Label>
               <Input
                 id="e"
                 type="email"
@@ -183,8 +183,13 @@ function SignInPage() {
             </div>
             <div className="space-y-1.5">
               <div className="flex items-center justify-between">
-                <Label htmlFor="p" className="text-sm font-medium">Password</Label>
-                <Link to="/auth/forgot-password" className="text-sm font-medium text-primary hover:underline">
+                <Label htmlFor="p" className="text-sm font-medium">
+                  Password
+                </Label>
+                <Link
+                  to="/auth/forgot-password"
+                  className="text-sm font-medium text-primary hover:underline"
+                >
                   Forgot password?
                 </Link>
               </div>
@@ -203,22 +208,22 @@ function SignInPage() {
                   onClick={() => setShowPassword(!showPassword)}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                 >
-                  {showPassword ? (
-                    <EyeOff className="h-5 w-5" />
-                  ) : (
-                    <Eye className="h-5 w-5" />
-                  )}
+                  {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                   <span className="sr-only">
                     {showPassword ? "Hide password" : "Show password"}
                   </span>
                 </button>
               </div>
             </div>
-            <Button type="submit" className="w-full rounded-xl h-12 neon-glow font-bold text-base mt-2" disabled={isLoading || isGoogleLoading}>
+            <Button
+              type="submit"
+              className="w-full rounded-xl h-12 neon-glow font-bold text-base mt-2"
+              disabled={isLoading || isGoogleLoading}
+            >
               {isLoading ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : "Sign in"}
             </Button>
           </form>
-          
+
           <p className="mt-8 text-center text-sm text-muted-foreground">
             Don't have an account?{" "}
             <Link to="/auth/sign-up" className="font-semibold text-primary hover:underline">

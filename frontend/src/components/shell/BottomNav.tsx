@@ -23,18 +23,14 @@ export function BottomNav() {
     >
       <ul className="grid grid-cols-5">
         {items.map((it) => {
-          const active = it.exact
-            ? pathname === it.to
-            : pathname.startsWith(it.to);
+          const active = it.exact ? pathname === it.to : pathname.startsWith(it.to);
           const Icon = it.icon;
           return (
             <li key={it.to}>
               <Link
                 to={it.to}
                 className={`flex min-h-14 flex-col items-center justify-center gap-1 py-2 text-xs transition-colors ${
-                  active
-                    ? "text-primary"
-                    : "text-muted-foreground hover:text-foreground"
+                  active ? "text-primary" : "text-muted-foreground hover:text-foreground"
                 }`}
               >
                 <Icon className="h-5 w-5" aria-hidden />
