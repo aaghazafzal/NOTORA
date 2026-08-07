@@ -95,7 +95,7 @@ export const Route = createFileRoute("/book/$bookId")({
   component: BookPage,
 });
 
-function SimilarBooksRow({ books, genre }: { books: Book[]; genre: string }) {
+function SimilarBooksRow({ books }: { books: Book[] }) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(true);
@@ -130,11 +130,7 @@ function SimilarBooksRow({ books, genre }: { books: Book[]; genre: string }) {
     <section className="mt-16 space-y-4 group/row">
       <div className="flex items-end justify-between gap-4 mb-6">
         <div className="min-w-0">
-          <div className="flex items-center gap-2 text-primary">
-            <Compass className="h-4 w-4" />
-            <span className="text-xs font-semibold uppercase tracking-wider">{genre}</span>
-          </div>
-          <h2 className="mt-1 truncate font-display text-2xl font-bold">Similar Books</h2>
+          <h2 className="mt-1 truncate font-display text-2xl font-bold">More Books</h2>
         </div>
       </div>
 
@@ -153,7 +149,7 @@ function SimilarBooksRow({ books, genre }: { books: Book[]; genre: string }) {
         <div
           ref={scrollRef}
           onScroll={checkScroll}
-          className="-mx-4 flex snap-x snap-mandatory gap-4 overflow-x-auto px-4 pb-2 sm:mx-0 sm:px-0 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden scroll-smooth"
+          className="-mx-6 flex snap-x snap-mandatory gap-4 overflow-x-auto px-6 scroll-px-6 pb-2 sm:mx-0 sm:px-0 sm:scroll-px-0 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden scroll-smooth"
         >
           {books.map((b) => (
             <div
@@ -163,6 +159,7 @@ function SimilarBooksRow({ books, genre }: { books: Book[]; genre: string }) {
               <BookCard book={b} />
             </div>
           ))}
+          <div className="w-2 shrink-0 sm:hidden" aria-hidden="true" />
         </div>
 
         {canScrollRight && (
@@ -185,10 +182,10 @@ function BookPage() {
 
   // Fetch similar books
   const { data: similarBooks = [] } = useQuery({
-    queryKey: ["similar-books", book.genre, book.id],
+    queryKey: ["similar-books", book.id],
     queryFn: async () => {
       const res = await fetch(
-        `${import.meta.env.VITE_API_URL || "http://localhost:9090"}/api/books?genres=${book.genre}&limit=12`,
+        `${import.meta.env.VITE_API_URL || "http://localhost:9090"}/api/books?limit=12`,
       );
       if (!res.ok) return [];
       const data = await res.json();
@@ -216,6 +213,58 @@ function BookPage() {
   const favorites = useAppStore((s) => s.shelves.favorites);
   const toggleShelf = useAppStore((s) => s.toggleShelf);
   const isFav = favorites.includes(book.id);
+
+  const BookTabs = (
+    <Tabs defaultValue="about" className="mt-8 md:mt-10">
+      <TabsList className="bg-transparent border-b border-border rounded-none p-0 w-full justify-start flex-nowrap overflow-hidden">
+        <TabsTrigger 
+          value="about" 
+          className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:text-foreground text-muted-foreground px-6 py-3 font-medium"
+        >
+          About
+        </TabsTrigger>
+        <TabsTrigger 
+          value="details" 
+          className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:text-foreground text-muted-foreground px-6 py-3 font-medium"
+        >
+          Details
+        </TabsTrigger>
+      </TabsList>
+      
+      <TabsContent value="about" className="mt-6 animate-in fade-in slide-in-from-bottom-2 duration-500">
+        <p className="text-base leading-relaxed text-foreground/90 whitespace-pre-wrap">
+          {book.description || "No description provided for this book."}
+        </p>
+      </TabsContent>
+      
+      <TabsContent value="details" className="mt-6 animate-in fade-in slide-in-from-bottom-2 duration-500">
+        <div className="rounded-2xl border border-border bg-card/50 p-6 shadow-sm">
+          <dl className="grid grid-cols-1 gap-6 text-sm sm:grid-cols-2 lg:grid-cols-3">
+            <div>
+              <dt className="text-muted-foreground mb-1">Published</dt>
+              <dd className="font-semibold text-foreground">{book.publishedYear}</dd>
+            </div>
+            <div>
+              <dt className="text-muted-foreground mb-1">Language</dt>
+              <dd className="font-semibold text-foreground">{book.language}</dd>
+            </div>
+            {book.pages > 0 && (
+              <div>
+                <dt className="text-muted-foreground mb-1">Pages</dt>
+                <dd className="font-semibold text-foreground">{book.pages}</dd>
+              </div>
+            )}
+            <div>
+              <dt className="text-muted-foreground mb-1">Formats</dt>
+              <dd className="font-semibold text-foreground uppercase">
+                {book.formats.join(", ")}
+              </dd>
+            </div>
+          </dl>
+        </div>
+      </TabsContent>
+    </Tabs>
+  );
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 sm:py-10 animate-in fade-in duration-500">
@@ -297,11 +346,13 @@ function BookPage() {
             <Share2 className="mr-2 h-4 w-4" /> Share
           </Button>
         </div>
+
+        {BookTabs}
       </div>
 
       {/* DESKTOP LAYOUT (hidden on mobile) */}
-      <div className="hidden md:grid gap-8 md:grid-cols-[240px_1fr] lg:grid-cols-[280px_1fr]">
-        <div>
+      <div className="hidden md:flex gap-8">
+        <div className="w-[240px] lg:w-[280px] shrink-0">
           <div
             className="aspect-[2/3] w-full overflow-hidden rounded-2xl shadow-2xl ring-1 ring-border/50 relative group transition-transform duration-300 hover:scale-[1.02]"
             style={(book as any).coverUrl ? { backgroundImage: `url(${(book as any).coverUrl})`, backgroundSize: 'cover', backgroundPosition: 'center' } : coverStyle(book.id)}
@@ -352,7 +403,7 @@ function BookPage() {
           </div>
         </div>
 
-        <div className="min-w-0">
+        <div className="flex-1 min-w-0">
           <p className="text-sm text-muted-foreground">
             by{" "}
             <Link
@@ -385,61 +436,12 @@ function BookPage() {
               </Badge>
             ))}
           </div>
+
+          {BookTabs}
         </div>
       </div>
 
-      {/* SHARED TABS FOR BOTH MOBILE AND DESKTOP */}
-      <Tabs defaultValue="about" className="mt-10 md:mt-16 md:pl-[272px] lg:pl-[312px]">
-        <TabsList className="bg-transparent border-b border-border rounded-none p-0 w-full justify-start overflow-x-auto flex-nowrap hide-scrollbar">
-          <TabsTrigger 
-            value="about" 
-            className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:text-foreground text-muted-foreground px-6 py-3 font-medium"
-          >
-            About
-          </TabsTrigger>
-          <TabsTrigger 
-            value="details" 
-            className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:text-foreground text-muted-foreground px-6 py-3 font-medium"
-          >
-            Details
-          </TabsTrigger>
-        </TabsList>
-        
-        <TabsContent value="about" className="mt-6 animate-in fade-in slide-in-from-bottom-2 duration-500">
-          <p className="text-base leading-relaxed text-foreground/90 whitespace-pre-wrap">
-            {book.description || "No description provided for this book."}
-          </p>
-        </TabsContent>
-        
-        <TabsContent value="details" className="mt-6 animate-in fade-in slide-in-from-bottom-2 duration-500">
-          <div className="rounded-2xl border border-border bg-card/50 p-6 shadow-sm">
-            <dl className="grid grid-cols-1 gap-6 text-sm sm:grid-cols-2 lg:grid-cols-3">
-              <div>
-                <dt className="text-muted-foreground mb-1">Published</dt>
-                <dd className="font-semibold text-foreground">{book.publishedYear}</dd>
-              </div>
-              <div>
-                <dt className="text-muted-foreground mb-1">Language</dt>
-                <dd className="font-semibold text-foreground">{book.language}</dd>
-              </div>
-              {book.pages > 0 && (
-                <div>
-                  <dt className="text-muted-foreground mb-1">Pages</dt>
-                  <dd className="font-semibold text-foreground">{book.pages}</dd>
-                </div>
-              )}
-              <div>
-                <dt className="text-muted-foreground mb-1">Formats</dt>
-                <dd className="font-semibold text-foreground uppercase">
-                  {book.formats.join(", ")}
-                </dd>
-              </div>
-            </dl>
-          </div>
-        </TabsContent>
-      </Tabs>
-
-      {similarBooks.length > 0 && <SimilarBooksRow books={similarBooks} genre={book.genre} />}
+      {similarBooks.length > 0 && <SimilarBooksRow books={similarBooks} />}
     </div>
   );
 }
