@@ -14,6 +14,7 @@ import { auth } from "@/lib/firebase";
 import { cn } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useTranslation } from "react-i18next";
+import i18nInstance from "@/i18n";
 
 export const Route = createFileRoute("/settings")({
   head: () => ({
@@ -32,7 +33,7 @@ const SECTIONS = [
 ];
 
 function SettingsPage() {
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
   const theme = useAppStore((s) => s.theme);
   const setTheme = useAppStore((s) => s.setTheme);
@@ -78,7 +79,7 @@ function SettingsPage() {
       if (profile.settings) {
         const lang = profile.settings.language || "English";
         setLanguage(lang);
-        i18n.changeLanguage(lang === "Hindi" ? "hi" : "en");
+        i18nInstance.changeLanguage(lang === "Hindi" ? "hi" : "en");
         setNotifications({
           newReviews: profile.settings.notifications?.newReviews ?? true,
           newFollowers: profile.settings.notifications?.newFollowers ?? true,
@@ -239,7 +240,7 @@ function SettingsPage() {
                     value={language}
                     onChange={(e) => {
                       setLanguage(e.target.value);
-                      i18n.changeLanguage(e.target.value === "Hindi" ? "hi" : "en");
+                      i18nInstance.changeLanguage(e.target.value === "Hindi" ? "hi" : "en");
                     }}
                     className="h-12 w-full rounded-xl border border-white/10 bg-black/40 px-4 text-base focus-visible:ring-1 focus-visible:ring-primary/50 focus-visible:outline-none [&>option]:bg-zinc-900"
                   >
