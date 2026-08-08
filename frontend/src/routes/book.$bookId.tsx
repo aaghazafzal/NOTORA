@@ -274,8 +274,10 @@ function BookPage() {
     queryKey: ["user-review", book.id, user?.uid],
     enabled: !!user,
     queryFn: async () => {
+      // @ts-ignore - user is guaranteed to exist because enabled: !!user
+      const token = await user.getIdToken();
       const res = await fetch(`${import.meta.env.VITE_API_URL || "http://localhost:9090"}/api/books/${book.id}/rate`, {
-        headers: { Authorization: `Bearer ${user?.uid}` }
+        headers: { Authorization: `Bearer ${token}` }
       });
       if (!res.ok) return { rating: 0, reviewText: '' };
       return res.json();
@@ -308,11 +310,12 @@ function BookPage() {
     }
     setIsSubmitting(true);
     try {
+      const token = await user.getIdToken();
       const res = await fetch(`${import.meta.env.VITE_API_URL || "http://localhost:9090"}/api/books/${book.id}/rate`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${user.uid}`
+          Authorization: `Bearer ${token}`
         },
         body: JSON.stringify({ rating, reviewText })
       });
