@@ -783,6 +783,26 @@ app.get('/api/users/:uid/following', async (req, res) => {
     }
 });
 
+app.post('/api/users/sync', async (req, res) => {
+    try {
+        const { uid, name, photoUrl } = req.body;
+        if (!uid || !name) return res.status(400).json({ error: 'Missing data' });
+        const User = dbManager.getUserModel();
+        const existing = await User.findOne({ uid });
+        if (!existing) {
+            await User.create({ uid, name, photoUrl, followers: 0, following: 0 });
+        } else if (!existing.name) {
+            existing.name = name;
+            existing.photoUrl = photoUrl;
+            await existing.save();
+        }
+        res.json({ success: true });
+    } catch (err) {
+        console.error('Failed to sync user:', err);
+        res.status(500).json({ error: 'Failed to sync user' });
+    }
+});
+
 app.get('/api/users/:uid', async (req, res) => {
     try {
         const User = dbManager.getUserModel();

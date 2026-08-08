@@ -120,6 +120,20 @@ export function TopBar() {
   const navigate = useNavigate();
   const { user, loading } = useAuthStore();
 
+  useEffect(() => {
+    if (user && user.uid && user.displayName) {
+      fetch(`${import.meta.env.VITE_API_URL || "http://localhost:9090"}/api/users/sync`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          uid: user.uid,
+          name: user.displayName,
+          photoUrl: user.photoURL,
+        })
+      }).catch(() => {});
+    }
+  }, [user]);
+
   const [lastSeenTime, setLastSeenTime] = useState<number>(() => {
     try {
       return parseInt(localStorage.getItem("notora-last-seen-notif") || "0", 10);
