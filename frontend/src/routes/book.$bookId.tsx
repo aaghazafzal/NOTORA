@@ -44,6 +44,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuCheckboxItem,
 } from "@/components/ui/dropdown-menu";
+import { useTranslation } from "react-i18next";
 
 import type { Book } from "@/data/books";
 
@@ -141,30 +142,37 @@ export const Route = createFileRoute("/book/$bookId")({
       ],
     };
   },
-  notFoundComponent: () => (
-    <div className="mx-auto max-w-md px-4 py-24 text-center">
-      <h1 className="font-display text-2xl font-bold">Book not found</h1>
-      <p className="mt-2 text-sm text-muted-foreground">
-        We couldn't find that title in the library.
-      </p>
-      <Button asChild className="mt-6 rounded-full neon-glow">
-        <Link to="/browse">Browse the library</Link>
-      </Button>
-    </div>
-  ),
-  errorComponent: ({ error, reset }) => (
-    <div className="mx-auto max-w-md px-4 py-24 text-center">
-      <h1 className="font-display text-2xl font-bold">Something broke</h1>
-      <p className="mt-2 text-sm text-muted-foreground">{error.message}</p>
-      <Button className="mt-6 rounded-full" onClick={reset}>
-        Try again
-      </Button>
-    </div>
-  ),
+  notFoundComponent: () => {
+    const { t } = useTranslation();
+    return (
+      <div className="mx-auto max-w-md px-4 py-24 text-center">
+        <h1 className="font-display text-2xl font-bold">{t("Book not found")}</h1>
+        <p className="mt-2 text-sm text-muted-foreground">
+          {t("We couldn't find that title in the library.")}
+        </p>
+        <Button asChild className="mt-6 rounded-full neon-glow">
+          <Link to="/browse">{t("Browse the library")}</Link>
+        </Button>
+      </div>
+    );
+  },
+  errorComponent: ({ error, reset }) => {
+    const { t } = useTranslation();
+    return (
+      <div className="mx-auto max-w-md px-4 py-24 text-center">
+        <h1 className="font-display text-2xl font-bold">{t("Something broke")}</h1>
+        <p className="mt-2 text-sm text-muted-foreground">{error.message}</p>
+        <Button className="mt-6 rounded-full" onClick={reset}>
+          {t("Try again")}
+        </Button>
+      </div>
+    );
+  },
   component: BookPage,
 });
 
 function SimilarBooksRow({ books }: { books: Book[] }) {
+  const { t } = useTranslation();
   const scrollRef = useRef<HTMLDivElement>(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(true);
@@ -199,7 +207,7 @@ function SimilarBooksRow({ books }: { books: Book[] }) {
     <section className="mt-16 space-y-4 group/row">
       <div className="flex items-end justify-between gap-4 mb-6">
         <div className="min-w-0">
-          <h2 className="mt-1 truncate font-display text-2xl font-bold">More Books</h2>
+          <h2 className="mt-1 truncate font-display text-2xl font-bold">{t("More Books")}</h2>
         </div>
       </div>
 
@@ -247,6 +255,7 @@ function SimilarBooksRow({ books }: { books: Book[] }) {
 }
 
 function BookPage() {
+  const { t } = useTranslation();
   const { book } = Route.useLoaderData();
   const { user } = useAuthStore();
   const queryClient = useQueryClient();
@@ -458,10 +467,10 @@ function BookPage() {
   };
 
   const systemShelves = [
-    { id: "favorites", label: "Favorites" },
-    { id: "reading", label: "Currently Reading" },
-    { id: "to-read", label: "To Read" },
-    { id: "completed", label: "Completed" },
+    { id: "favorites", label: t("Favorites") },
+    { id: "reading", label: t("Currently Reading") },
+    { id: "to-read", label: t("To Read") },
+    { id: "completed", label: t("Completed") },
   ];
 
   const AddToShelfButton = () => {
@@ -474,14 +483,14 @@ function BookPage() {
             className={`rounded-full shadow-sm ${isFav ? "neon-glow bg-red-500 hover:bg-red-600 text-white" : "hover:bg-secondary/50"}`}
           >
             {isFav ? (
-              <><Heart className="mr-2 h-4 w-4 fill-current" /> Favorited</>
+              <><Heart className="mr-2 h-4 w-4 fill-current" /> {t("Favorited")}</>
             ) : (
-              <><Heart className="mr-2 h-4 w-4" /> Add to Shelf</>
+              <><Heart className="mr-2 h-4 w-4" /> {t("Add to Shelf")}</>
             )}
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-56 rounded-xl">
-          <DropdownMenuLabel>System Shelves</DropdownMenuLabel>
+          <DropdownMenuLabel>{t("System Shelves")}</DropdownMenuLabel>
           {systemShelves.map((shelf) => (
             <DropdownMenuCheckboxItem
               key={shelf.id}
@@ -494,7 +503,7 @@ function BookPage() {
           {library?.customShelves && Object.keys(library.customShelves).length > 0 && (
             <>
               <DropdownMenuSeparator />
-              <DropdownMenuLabel>Custom Shelves</DropdownMenuLabel>
+              <DropdownMenuLabel>{t("Custom Shelves")}</DropdownMenuLabel>
               {Object.keys(library.customShelves).map((shelfName) => (
                 <DropdownMenuCheckboxItem
                   key={shelfName}
@@ -539,25 +548,25 @@ function BookPage() {
           value="about" 
           className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:text-foreground text-muted-foreground px-6 py-3 font-medium"
         >
-          About
+          {t("About")}
         </TabsTrigger>
         <TabsTrigger 
           value="details" 
           className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:text-foreground text-muted-foreground px-6 py-3 font-medium"
         >
-          Details
+          {t("Details")}
         </TabsTrigger>
         <TabsTrigger 
           value="reviews" 
           className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:text-foreground text-muted-foreground px-6 py-3 font-medium"
         >
-          Reviews {book.ratingCount > 0 && <span className="ml-1 opacity-70">({book.ratingCount})</span>}
+          {t("Reviews")} {book.ratingCount > 0 && <span className="ml-1 opacity-70">({book.ratingCount})</span>}
         </TabsTrigger>
       </TabsList>
       
       <TabsContent value="about" className="mt-6 animate-in fade-in slide-in-from-bottom-2 duration-500">
         <p className="text-base leading-relaxed text-foreground/90 whitespace-pre-wrap">
-          {book.description || "No description provided for this book."}
+          {book.description || t("No description provided for this book.")}
         </p>
       </TabsContent>
       
@@ -565,21 +574,21 @@ function BookPage() {
         <div className="rounded-2xl border border-border bg-card/50 p-6 shadow-sm">
           <dl className="grid grid-cols-1 gap-6 text-sm sm:grid-cols-2 lg:grid-cols-3">
             <div>
-              <dt className="text-muted-foreground mb-1">Published</dt>
+              <dt className="text-muted-foreground mb-1">{t("Published")}</dt>
               <dd className="font-semibold text-foreground">{book.publishedYear}</dd>
             </div>
             <div>
-              <dt className="text-muted-foreground mb-1">Language</dt>
-              <dd className="font-semibold text-foreground">{book.language}</dd>
+              <dt className="text-muted-foreground mb-1">{t("Language")}</dt>
+              <dd className="font-semibold text-foreground">{t(book.language)}</dd>
             </div>
             {book.pages > 0 && (
               <div>
-                <dt className="text-muted-foreground mb-1">Pages</dt>
+                <dt className="text-muted-foreground mb-1">{t("Pages")}</dt>
                 <dd className="font-semibold text-foreground">{book.pages}</dd>
               </div>
             )}
             <div>
-              <dt className="text-muted-foreground mb-1">Formats</dt>
+              <dt className="text-muted-foreground mb-1">{t("Formats")}</dt>
               <dd className="font-semibold text-foreground uppercase">
                 {book.formats.join(", ")}
               </dd>
@@ -598,11 +607,11 @@ function BookPage() {
                 className="absolute top-4 right-4 text-muted-foreground"
                 onClick={() => setIsEditing(false)}
               >
-                Cancel Edit
+                {t("Cancel Edit")}
               </Button>
             )}
             <h3 className="text-lg font-semibold mb-4 text-foreground">
-              {user ? (isEditing ? "Edit your Review" : "Write a Review") : "Login to Review"}
+              {user ? (isEditing ? t("Edit your Review") : t("Write a Review")) : t("Login to Review")}
             </h3>
             <div className="space-y-4">
               <div>
@@ -612,7 +621,7 @@ function BookPage() {
                 <>
                   <div className="relative">
                     <Textarea
-                      placeholder="What did you think of this book?"
+                      placeholder={t("What did you think of this book?")}
                       value={reviewText}
                       onChange={(e) => setReviewText(e.target.value.substring(0, 300))}
                       className="min-h-[100px] resize-none bg-background/50 focus-visible:ring-primary/20"
@@ -626,7 +635,7 @@ function BookPage() {
                     disabled={isSubmitting || rating === 0}
                     className="rounded-full neon-glow px-8"
                   >
-                    {isSubmitting ? "Submitting..." : (isEditing ? "Update Review" : "Submit Review")}
+                    {isSubmitting ? t("Submitting...") : (isEditing ? t("Update Review") : t("Submit Review"))}
                   </Button>
                 </>
               )}
@@ -635,7 +644,7 @@ function BookPage() {
         )}
 
         <div className="space-y-6">
-          <h3 className="text-lg font-semibold text-foreground border-b border-border pb-2">Community Reviews</h3>
+          <h3 className="text-lg font-semibold text-foreground border-b border-border pb-2">{t("Community Reviews")}</h3>
           
           {userReview && userReview.rating > 0 && !isEditing && (
             <div className="rounded-2xl border border-primary/30 bg-primary/5 p-6 shadow-sm relative">
@@ -652,15 +661,15 @@ function BookPage() {
                   </AlertDialogTrigger>
                   <AlertDialogContent>
                     <AlertDialogHeader>
-                      <AlertDialogTitle>Delete Review?</AlertDialogTitle>
+                      <AlertDialogTitle>{t("Delete Review?")}</AlertDialogTitle>
                       <AlertDialogDescription>
-                        Are you sure you want to delete your review? This action cannot be undone.
+                        {t("Are you sure you want to delete your review? This action cannot be undone.")}
                       </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
-                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                      <AlertDialogCancel>{t("Cancel")}</AlertDialogCancel>
                       <AlertDialogAction onClick={deleteReview} className="bg-destructive hover:bg-destructive/90">
-                        {isDeleting ? "Deleting..." : "Delete"}
+                        {isDeleting ? t("Deleting...") : t("Delete")}
                       </AlertDialogAction>
                     </AlertDialogFooter>
                   </AlertDialogContent>
@@ -673,7 +682,7 @@ function BookPage() {
                 </Avatar>
                 <div className="flex-1 space-y-1">
                   <div className="flex items-center justify-between mr-16">
-                    <p className="font-semibold text-sm text-foreground">Your Review</p>
+                    <p className="font-semibold text-sm text-foreground">{t("Your Review")}</p>
                   </div>
                   <StarRating rating={userReview.rating} readonly size="sm" />
                   {userReview.reviewText && (
@@ -685,7 +694,7 @@ function BookPage() {
           )}
 
           {reviews.filter((r: any) => r.userId !== user?.uid).length === 0 && (!userReview || userReview.rating === 0) ? (
-            <p className="text-muted-foreground text-sm py-4 text-center">No reviews yet. Be the first to review!</p>
+            <p className="text-muted-foreground text-sm py-4 text-center">{t("No reviews yet. Be the first to review!")}</p>
           ) : (
             <div className="space-y-6">
               {reviews.filter((r: any) => r.userId !== user?.uid).map((r: any) => (
@@ -740,17 +749,17 @@ function BookPage() {
             </p>
             <div className="mt-2 flex items-center gap-2">
               <StarRating rating={book.averageRating} readonly size="sm" />
-              <span className="text-xs font-medium text-foreground">{book.averageRating > 0 ? book.averageRating.toFixed(1) : "New"}</span>
-              <span className="text-xs text-muted-foreground">({book.ratingCount} reviews)</span>
+              <span className="text-xs font-medium text-foreground">{book.averageRating > 0 ? book.averageRating.toFixed(1) : t("New")}</span>
+              <span className="text-xs text-muted-foreground">({book.ratingCount} {t("reviews")})</span>
             </div>
             <div className="mt-3 flex flex-wrap gap-2 text-xs font-medium text-muted-foreground">
-              {book.pages > 0 && <span>{book.pages} pages</span>}
+              {book.pages > 0 && <span>{book.pages} {t("pages")}</span>}
               {book.pages > 0 && <span className="text-border">•</span>}
               <span>{book.publishedYear}</span>
             </div>
             <div className="mt-2">
               <Badge variant="secondary" className="px-2 py-0.5 bg-primary/10 text-primary border-transparent text-[10px]">
-                {book.genre}
+                {t(book.genre)}
               </Badge>
             </div>
           </div>
@@ -759,7 +768,7 @@ function BookPage() {
         <div className="grid grid-cols-2 gap-3">
           <Button asChild className="neon-glow rounded-full shadow-lg">
             <Link to="/read/$bookId" params={{ bookId: book.slug }}>
-              <BookOpen className="mr-2 h-4 w-4" /> Read
+              <BookOpen className="mr-2 h-4 w-4" /> {t("Read")}
             </Link>
           </Button>
           <Button
@@ -770,7 +779,7 @@ function BookPage() {
               toast.success(`${book.title} download started`);
             }}
           >
-            <Download className="mr-2 h-4 w-4" /> Download
+            <Download className="mr-2 h-4 w-4" /> {t("Download")}
           </Button>
           <AddToShelfButton />
           <Button
@@ -778,7 +787,7 @@ function BookPage() {
             className="rounded-full shadow-sm hover:bg-secondary/50"
             onClick={handleShare}
           >
-            <Share2 className="mr-2 h-4 w-4" /> Share
+            <Share2 className="mr-2 h-4 w-4" /> {t("Share")}
           </Button>
         </div>
 
@@ -796,7 +805,7 @@ function BookPage() {
           <div className="mt-6 grid grid-cols-2 gap-3">
             <Button asChild className="neon-glow rounded-full shadow-lg">
               <Link to="/read/$bookId" params={{ bookId: book.slug }}>
-                <BookOpen className="mr-2 h-4 w-4" /> Read
+                <BookOpen className="mr-2 h-4 w-4" /> {t("Read")}
               </Link>
             </Button>
             <Button
@@ -807,7 +816,7 @@ function BookPage() {
                 toast.success(`${book.title} download started`);
               }}
             >
-              <Download className="mr-2 h-4 w-4" /> Download
+              <Download className="mr-2 h-4 w-4" /> {t("Download")}
             </Button>
             <AddToShelfButton />
             <Button
@@ -815,7 +824,7 @@ function BookPage() {
               className="rounded-full shadow-sm hover:bg-secondary/50"
               onClick={handleShare}
             >
-              <Share2 className="mr-2 h-4 w-4" /> Share
+              <Share2 className="mr-2 h-4 w-4" /> {t("Share")}
             </Button>
           </div>
         </div>
@@ -837,23 +846,23 @@ function BookPage() {
           
           <div className="mt-4 flex items-center gap-3">
             <StarRating rating={book.averageRating} readonly size="md" />
-            <span className="text-sm font-semibold text-foreground">{book.averageRating > 0 ? book.averageRating.toFixed(1) : "No rating"}</span>
+            <span className="text-sm font-semibold text-foreground">{book.averageRating > 0 ? book.averageRating.toFixed(1) : t("No rating")}</span>
             <span className="text-sm text-muted-foreground hover:text-primary transition-colors cursor-pointer" onClick={() => document.querySelector('[value="reviews"]')?.dispatchEvent(new MouseEvent('click', {bubbles: true}))}>
-              ({book.ratingCount} {book.ratingCount === 1 ? 'review' : 'reviews'})
+              ({book.ratingCount} {book.ratingCount === 1 ? t('review') : t('reviews')})
             </span>
           </div>
 
           <div className="mt-5 flex flex-wrap items-center gap-3 text-sm">
-            {book.pages > 0 && <span className="text-muted-foreground font-medium">{book.pages} pages</span>}
+            {book.pages > 0 && <span className="text-muted-foreground font-medium">{book.pages} {t("pages")}</span>}
             {book.pages > 0 && <span className="text-border">•</span>}
             <span className="text-muted-foreground font-medium">
-              {book.language} · {book.publishedYear}
+              {t(book.language)} · {book.publishedYear}
             </span>
           </div>
           
           <div className="mt-6 flex flex-wrap gap-2">
             <Badge variant="secondary" className="px-3 py-1 bg-primary/10 text-primary border-transparent">
-              {book.genre}
+              {t(book.genre)}
             </Badge>
             {book.tags.map((t: string) => (
               <Badge key={t} variant="outline" className="px-3 py-1 bg-background/50">
