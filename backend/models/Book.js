@@ -17,4 +17,4 @@ const bookSchema = new mongoose.Schema({
     uploadDate: { type: Date, default: Date.now }
 });
 
-module.exports = mongoose.model('Book', bookSchema);
+module.exports = bookSchema;

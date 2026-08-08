@@ -11,9 +11,7 @@ const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 const { S3Client, PutObjectCommand, DeleteObjectCommand } = require('@aws-sdk/client-s3');
 const { client, initClient, uploadToTelegram, forwardMessage } = require('./telegramClient');
-const Book = require('./models/Book');
-const Library = require('./models/Library');
-const User = require('./models/User');
+const dbManager = require('./db');
 
 const app = express();
 
@@ -47,11 +45,7 @@ const uploadLimiter = rateLimit({
 
 const PRIMARY_CHANNEL = -1004391184725;
 const BACKUP_CHANNEL = -1004293174793;
-const MONGO_URI = "mongodb+srv://notora:aaghaz9431@notora.fvaoxen.mongodb.net/?appName=notora";
-
-mongoose.connect(MONGO_URI)
-  .then(() => console.log("Connected to MongoDB Atlas"))
-  .catch(err => console.error("MongoDB connection error:", err));
+// Database initialization is now handled by dbManager in the startup block
 
 const s3 = new S3Client({
     region: 'auto',
@@ -146,7 +140,8 @@ app.post('/api/upload', verifyToken, uploadLimiter, upload.fields([{ name: 'book
             console.error('Failed to copy to Backup Channel (non-fatal):', backupErr);
         }
 
-        const newBook = new Book({
+        const BookModel = dbManager.getActiveBookModel();
+        const newBook = new BookModel({
             title,
             author,
             description,
@@ -210,11 +205,8 @@ app.get('/api/books', async (req, res) => {
         const limitNum = parseInt(limit);
         const skip = (pageNum - 1) * limitNum;
 
-        const totalCount = await Book.countDocuments(query);
-        const books = await Book.find(query)
-                            .sort({ uploadDate: -1 })
-                            .skip(skip)
-                            .limit(limitNum);
+        const totalCount = await dbManager.countBooksAcrossAll(query);
+        const books = await dbManager.findBooksAcrossAll(query, { uploadDate: -1 }, skip, limitNum);
                             
         res.json({
             books,
@@ -230,11 +222,12 @@ app.get('/api/books', async (req, res) => {
 
 app.get('/api/books/:id', async (req, res) => {
     try {
-        const book = await Book.findById(req.params.id);
-        if (!book) return res.status(404).json({ error: 'Book not found' });
-        let bookData = book.toObject();
-        if (book.uploaderId) {
-            const user = await User.findOne({ uid: book.uploaderId });
+        const bookData = await dbManager.findBookByIdAcrossAll(req.params.id);
+        if (!bookData) return res.status(404).json({ error: 'Book not found' });
+        
+        if (bookData.uploaderId) {
+            const User = dbManager.getUserModel();
+            const user = await User.findOne({ uid: bookData.uploaderId }).lean();
             if (user) {
                 bookData.uploaderName = user.name;
             }
@@ -247,7 +240,7 @@ app.get('/api/books/:id', async (req, res) => {
 
 app.get('/api/books/user/:uploaderId', async (req, res) => {
     try {
-        const books = await Book.find({ uploaderId: req.params.uploaderId }).sort({ uploadDate: -1 });
+        const books = await dbManager.findBooksAcrossAll({ uploaderId: req.params.uploaderId }, { uploadDate: -1 });
         res.json(books);
     } catch (err) {
         res.status(500).json({ error: 'Failed to fetch user books' });
@@ -256,7 +249,7 @@ app.get('/api/books/user/:uploaderId', async (req, res) => {
 
 app.get('/api/download/:id', async (req, res) => {
     try {
-        const book = await Book.findById(req.params.id);
+        const book = await dbManager.findBookByIdAcrossAll(req.params.id);
         if (!book) return res.status(404).send('Book not found');
 
         let message = null;
@@ -435,17 +428,41 @@ app.get('/api/download/:id', async (req, res) => {
 app.get('/api/library', verifyToken, async (req, res) => {
     try {
         const userId = req.user.uid;
-        let library = await Library.findOne({ userId }).populate('shelves.reading shelves.favorites shelves.completed shelves.to-read');
+        const Library = dbManager.getLibraryModel();
+        let library = await Library.findOne({ userId }).lean();
         
         if (!library) {
-            library = new Library({ userId });
-            await library.save();
+            // If library doesn't exist, create it on DB1
+            const newLibrary = new Library({ userId });
+            await newLibrary.save();
+            library = newLibrary.toObject();
         }
         
-        try {
-            await library.populate('customShelves.$*');
-        } catch(e) {
-            console.warn("Failed to populate custom shelves", e);
+        // Manual cross-database population
+        const bookIds = new Set();
+        const shelfNames = ['reading', 'favorites', 'completed', 'to-read'];
+        for (const shelf of shelfNames) {
+            (library.shelves[shelf] || []).forEach(id => bookIds.add(id.toString()));
+        }
+        for (const [shelfName, ids] of Object.entries(library.customShelves || {})) {
+            (ids || []).forEach(id => bookIds.add(id.toString()));
+        }
+
+        if (bookIds.size > 0) {
+            const books = await dbManager.findBooksAcrossAll({ _id: { $in: Array.from(bookIds) } });
+            const bookMap = {};
+            books.forEach(b => bookMap[b._id.toString()] = b);
+
+            for (const shelf of shelfNames) {
+                library.shelves[shelf] = (library.shelves[shelf] || [])
+                    .map(id => bookMap[id.toString()])
+                    .filter(Boolean);
+            }
+            for (const [shelfName, ids] of Object.entries(library.customShelves || {})) {
+                library.customShelves[shelfName] = (ids || [])
+                    .map(id => bookMap[id.toString()])
+                    .filter(Boolean);
+            }
         }
         
         res.json(library);
@@ -460,6 +477,7 @@ app.post('/api/library/shelves', verifyToken, async (req, res) => {
         const userId = req.user.uid;
         const { bookId, targetShelf, custom = false, action = 'add' } = req.body;
         
+        const Library = dbManager.getLibraryModel();
         let library = await Library.findOne({ userId });
         if (!library) {
             library = new Library({ userId });
@@ -502,6 +520,7 @@ app.post('/api/library/progress', verifyToken, async (req, res) => {
         const userId = req.user.uid;
         const { bookId, page } = req.body;
         
+        const Library = dbManager.getLibraryModel();
         let library = await Library.findOne({ userId });
         if (!library) library = new Library({ userId });
         
@@ -522,6 +541,7 @@ app.post('/api/library/progress', verifyToken, async (req, res) => {
 // User Profile Routes
 app.get('/api/users/:uid', async (req, res) => {
     try {
+        const User = dbManager.getUserModel();
         let user = await User.findOne({ uid: req.params.uid });
         if (!user) {
             // Return 404 if not found, frontend can fallback to firebase auth data
@@ -539,6 +559,7 @@ app.put('/api/users/profile', verifyToken, upload.single('photo'), async (req, r
         const uid = req.user.uid;
         const { name, bio } = req.body;
         
+        const User = dbManager.getUserModel();
         let user = await User.findOne({ uid });
         if (!user) {
             user = new User({ uid });
@@ -616,8 +637,9 @@ setInterval(() => {
 
 
 const PORT = process.env.PORT || 9090;
-initClient().then(() => {
+initClient().then(async () => {
+    await dbManager.connectAll();
     app.listen(PORT, () => {
-        console.log(`Secure Backend running on port ${PORT}`);
+        console.log(`Secure Backend running on port ${PORT} with Multi-DB`);
     });
 });
