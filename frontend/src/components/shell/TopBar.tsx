@@ -30,6 +30,7 @@ import { useAuthStore } from "@/store/useAuthStore";
 import { auth } from "@/lib/firebase";
 import { signOut } from "firebase/auth";
 import { useTranslation } from "react-i18next";
+import { useQuery } from "@tanstack/react-query";
 
 export function TopBar() {
   const { t } = useTranslation();
@@ -37,7 +38,36 @@ export function TopBar() {
   const [showSignOutDialog, setShowSignOutDialog] = useState(false);
   const navigate = useNavigate();
   const { user, loading } = useAuthStore();
-  const unread = NOTIFICATIONS.filter((n) => !n.read).length;
+
+  const [lastSeenTime, setLastSeenTime] = useState<number>(() => {
+    try {
+      return parseInt(localStorage.getItem("notora-last-seen-notif") || "0", 10);
+    } catch {
+      return 0;
+    }
+  });
+
+  const { data: newBooks } = useQuery({
+    queryKey: ["notifications", "new-books"],
+    queryFn: async () => {
+      const res = await fetch(`${import.meta.env.VITE_API_URL || "http://localhost:9090"}/api/books?limit=5`);
+      if (!res.ok) return [];
+      const data = await res.json();
+      return data.books || [];
+    },
+    enabled: !!user,
+    refetchInterval: 30000,
+  });
+
+  const unreadCount = newBooks ? newBooks.filter((b: any) => new Date(b.uploadDate).getTime() > lastSeenTime).length : 0;
+
+  const handleOpenNotifs = (open: boolean) => {
+    if (open && newBooks && newBooks.length > 0) {
+      const latest = Math.max(...newBooks.map((b: any) => new Date(b.uploadDate).getTime()));
+      setLastSeenTime(latest);
+      localStorage.setItem("notora-last-seen-notif", latest.toString());
+    }
+  };
 
   const handleSignOut = async () => {
     await signOut(auth);
@@ -87,7 +117,7 @@ export function TopBar() {
         </Link>
         <ThemeToggle />
         {user && (
-          <Sheet>
+          <Sheet onOpenChange={handleOpenNotifs}>
             <SheetTrigger asChild>
               <Button
                 variant="ghost"
@@ -96,30 +126,36 @@ export function TopBar() {
                 aria-label="Notifications"
               >
                 <Bell className="h-5 w-5" />
-                {unread > 0 && (
+                {unreadCount > 0 && (
                   <span className="absolute right-1.5 top-1.5 grid h-4 min-w-4 place-items-center rounded-full bg-primary px-1 text-[10px] font-bold text-primary-foreground">
-                    {unread}
+                    {unreadCount}
                   </span>
                 )}
               </Button>
             </SheetTrigger>
             <SheetContent>
               <SheetHeader>
-                <SheetTitle>Notifications</SheetTitle>
+                <SheetTitle>{t("Notifications")}</SheetTitle>
               </SheetHeader>
               <ul className="mt-4 space-y-2">
-                {NOTIFICATIONS.map((n) => (
+                {newBooks?.map((b: any) => (
                   <li
-                    key={n.id}
-                    className={`rounded-lg border border-border p-3 ${
-                      n.read ? "opacity-60" : "bg-accent/30"
-                    }`}
+                    key={b._id}
+                    className="rounded-lg border border-border p-0 bg-accent/30 hover:bg-accent/50 transition-colors overflow-hidden"
                   >
-                    <div className="text-sm font-semibold">{n.title}</div>
-                    <div className="mt-1 text-sm text-muted-foreground">{n.body}</div>
-                    <div className="mt-2 text-xs text-muted-foreground">{n.createdAt}</div>
+                    <Link to="/book/$bookId" params={{ bookId: b._id }} className="block p-3">
+                      <div className="text-sm font-semibold text-primary">{t("New book uploaded!")}</div>
+                      <div className="mt-1 text-sm text-foreground font-medium">{b.title}</div>
+                      <div className="mt-1 text-xs text-muted-foreground line-clamp-1">{t("by")} {b.author}</div>
+                      <div className="mt-2 text-[10px] text-muted-foreground">
+                        {new Date(b.uploadDate).toLocaleDateString()}
+                      </div>
+                    </Link>
                   </li>
                 ))}
+                {(!newBooks || newBooks.length === 0) && (
+                  <div className="text-sm text-muted-foreground text-center py-4">{t("No new notifications")}</div>
+                )}
               </ul>
             </SheetContent>
           </Sheet>
