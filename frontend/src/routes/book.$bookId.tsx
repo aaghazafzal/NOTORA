@@ -1,4 +1,4 @@
-import { createFileRoute, Link, notFound } from "@tanstack/react-router";
+import { createFileRoute, Link, notFound, useNavigate } from "@tanstack/react-router";
 import {
   BookOpen,
   Download,
@@ -14,7 +14,7 @@ import {
   Edit3
 } from "lucide-react";
 import { useRef, useState, useEffect } from "react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { BookCard } from "@/components/BookCard";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -36,6 +36,14 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuCheckboxItem,
+} from "@/components/ui/dropdown-menu";
 
 import type { Book } from "@/data/books";
 
@@ -242,6 +250,58 @@ function BookPage() {
   const { book } = Route.useLoaderData();
   const { user } = useAuthStore();
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
+
+  const { data: library } = useQuery({
+    queryKey: ["library", user?.uid],
+    enabled: !!user,
+    queryFn: async () => {
+      // @ts-ignore
+      const token = await user.getIdToken();
+      const res = await fetch(`${import.meta.env.VITE_API_URL || "http://localhost:9090"}/api/library`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (!res.ok) return null;
+      return res.json();
+    },
+  });
+
+  const toggleShelfMutation = useMutation({
+    mutationFn: async ({ shelfId, custom, action }: { shelfId: string, custom: boolean, action: 'add' | 'remove' }) => {
+      if (!user) throw new Error("Must be logged in");
+      // @ts-ignore
+      const token = await user.getIdToken();
+      const res = await fetch(`${import.meta.env.VITE_API_URL || "http://localhost:9090"}/api/library/shelves`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          bookId: book.id,
+          targetShelf: shelfId,
+          custom,
+          action
+        }),
+      });
+      if (!res.ok) throw new Error("Failed to update shelf");
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["library", user?.uid] });
+    },
+    onError: (err) => {
+      toast.error(err.message);
+    }
+  });
+
+  const isBookInShelf = (shelfId: string, custom: boolean) => {
+    if (!library) return false;
+    if (custom) {
+      return (library.customShelves?.[shelfId] || []).some((b: any) => b._id === book.id || b.id === book.id);
+    }
+    return (library.shelves?.[shelfId] || []).some((b: any) => b._id === book.id || b.id === book.id);
+  };
 
   const { data: similarBooks = [] } = useQuery({
     queryKey: ["similar-books", book.id],
@@ -384,9 +444,72 @@ function BookPage() {
     }
   };
 
-  const favorites = useAppStore((s) => s.shelves.favorites);
-  const toggleShelf = useAppStore((s) => s.toggleShelf);
-  const isFav = favorites.includes(book.id);
+  const handleShelfToggle = (shelfId: string, custom: boolean) => {
+    if (!user) {
+      navigate({ to: "/auth/sign-in" });
+      return;
+    }
+    const currentlyInShelf = isBookInShelf(shelfId, custom);
+    toggleShelfMutation.mutate({
+      shelfId,
+      custom,
+      action: currentlyInShelf ? 'remove' : 'add'
+    });
+  };
+
+  const systemShelves = [
+    { id: "favorites", label: "Favorites" },
+    { id: "reading", label: "Currently Reading" },
+    { id: "to-read", label: "To Read" },
+    { id: "completed", label: "Completed" },
+  ];
+
+  const AddToShelfButton = () => {
+    const isFav = isBookInShelf("favorites", false);
+    return (
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button
+            variant={isFav ? "default" : "outline"}
+            className={`rounded-full shadow-sm ${isFav ? "neon-glow bg-red-500 hover:bg-red-600 text-white" : "hover:bg-secondary/50"}`}
+          >
+            {isFav ? (
+              <><Heart className="mr-2 h-4 w-4 fill-current" /> Favorited</>
+            ) : (
+              <><Heart className="mr-2 h-4 w-4" /> Add to Shelf</>
+            )}
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end" className="w-56 rounded-xl">
+          <DropdownMenuLabel>System Shelves</DropdownMenuLabel>
+          {systemShelves.map((shelf) => (
+            <DropdownMenuCheckboxItem
+              key={shelf.id}
+              checked={isBookInShelf(shelf.id, false)}
+              onCheckedChange={() => handleShelfToggle(shelf.id, false)}
+            >
+              {shelf.label}
+            </DropdownMenuCheckboxItem>
+          ))}
+          {library?.customShelves && Object.keys(library.customShelves).length > 0 && (
+            <>
+              <DropdownMenuSeparator />
+              <DropdownMenuLabel>Custom Shelves</DropdownMenuLabel>
+              {Object.keys(library.customShelves).map((shelfName) => (
+                <DropdownMenuCheckboxItem
+                  key={shelfName}
+                  checked={isBookInShelf(shelfName, true)}
+                  onCheckedChange={() => handleShelfToggle(shelfName, true)}
+                >
+                  {shelfName}
+                </DropdownMenuCheckboxItem>
+              ))}
+            </>
+          )}
+        </DropdownMenuContent>
+      </DropdownMenu>
+    );
+  };
 
   const handleShare = async () => {
     if (navigator.share) {
@@ -649,20 +772,7 @@ function BookPage() {
           >
             <Download className="mr-2 h-4 w-4" /> Download
           </Button>
-          <Button
-            variant={isFav ? "default" : "outline"}
-            className={`rounded-full shadow-sm ${isFav ? "neon-glow bg-red-500 hover:bg-red-600 text-white" : "hover:bg-secondary/50"}`}
-            onClick={() => {
-              toggleShelf("favorites", book.id);
-              toast.success(isFav ? "Removed from favorites" : "Added to favorites");
-            }}
-          >
-            {isFav ? (
-              <><Heart className="mr-2 h-4 w-4 fill-current" /> Favorited</>
-            ) : (
-              <><Heart className="mr-2 h-4 w-4" /> Favorite</>
-            )}
-          </Button>
+          <AddToShelfButton />
           <Button
             variant="outline"
             className="rounded-full shadow-sm hover:bg-secondary/50"
@@ -699,20 +809,7 @@ function BookPage() {
             >
               <Download className="mr-2 h-4 w-4" /> Download
             </Button>
-            <Button
-              variant={isFav ? "default" : "outline"}
-              className={`rounded-full shadow-sm ${isFav ? "neon-glow bg-red-500 hover:bg-red-600 text-white" : "hover:bg-secondary/50"}`}
-              onClick={() => {
-                toggleShelf("favorites", book.id);
-                toast.success(isFav ? "Removed from favorites" : "Added to favorites");
-              }}
-            >
-              {isFav ? (
-                <><Heart className="mr-2 h-4 w-4 fill-current" /> Favorited</>
-              ) : (
-                <><Heart className="mr-2 h-4 w-4" /> Favorite</>
-              )}
-            </Button>
+            <AddToShelfButton />
             <Button
               variant="outline"
               className="rounded-full shadow-sm hover:bg-secondary/50"

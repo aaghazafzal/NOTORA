@@ -1,13 +1,12 @@
 import { useState, useEffect } from "react";
 import { createFileRoute } from "@tanstack/react-router";
-import { Plus, BookMarked, Heart, CheckCircle2, Clock, Loader2, LogIn } from "lucide-react";
+import { Plus, BookMarked, Heart, CheckCircle2, Clock, Loader2, LogIn, Bookmark, Library } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { onAuthStateChanged } from "firebase/auth";
 import { auth } from "@/lib/firebase";
 import { BookCard } from "@/components/BookCard";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import {
   Dialog,
   DialogContent,
@@ -16,6 +15,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/library")({
   head: () => ({
@@ -40,17 +40,17 @@ const SHELVES = [
 function ShelfGrid({ books }: { books: any[] }) {
   if (!books || books.length === 0) {
     return (
-      <div className="rounded-3xl border border-dashed border-border/60 bg-muted/10 p-16 text-center max-w-2xl mx-auto mt-6">
-        <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-muted mb-4">
-          <BookMarked className="h-8 w-8 text-muted-foreground/50" />
+      <div className="relative overflow-hidden rounded-3xl border border-white/5 bg-white/5 backdrop-blur-xl p-12 sm:p-16 text-center max-w-2xl mx-auto mt-6 shadow-[0_0_40px_-15px_rgba(0,0,0,0.5)]">
+        <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-transparent to-transparent opacity-50" />
+        <div className="relative z-10 mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-white/5 border border-white/10 mb-6 shadow-inner">
+          <Library className="h-10 w-10 text-muted-foreground/70" />
         </div>
-        <p className="font-display text-xl font-semibold">This shelf is empty</p>
-        <p className="mt-2 text-sm text-muted-foreground max-w-sm mx-auto">
-          Browse the library and add books to fill it up.
+        <p className="relative z-10 font-display text-2xl font-semibold text-foreground">This shelf is empty</p>
+        <p className="relative z-10 mt-3 text-sm text-muted-foreground max-w-sm mx-auto">
+          Browse the library and add books to fill it up with your favorites.
         </p>
         <Button
-          variant="outline"
-          className="mt-6 rounded-full"
+          className="relative z-10 mt-8 rounded-full bg-primary/20 hover:bg-primary/30 text-primary border border-primary/30 backdrop-blur-md transition-all hover:shadow-[0_0_20px_rgba(var(--primary),0.3)]"
           onClick={() => (window.location.href = "/browse")}
         >
           Browse Library
@@ -65,6 +65,7 @@ function ShelfGrid({ books }: { books: any[] }) {
           <BookCard
             book={{
               id: b._id,
+              slug: b.slug || b._id,
               title: b.title,
               authorName: b.author,
               coverUrl: b.coverUrl,
@@ -73,6 +74,8 @@ function ShelfGrid({ books }: { books: any[] }) {
               rating: 4.8,
               ratingCount: 152,
               language: b.language || "English",
+              pages: b.pages || 0,
+              publishedYear: b.publishedYear || null,
             }}
           />
         </div>
@@ -87,6 +90,7 @@ function LibraryPage() {
   const [authResolved, setAuthResolved] = useState(false);
   const [newShelf, setNewShelf] = useState("");
   const [open, setOpen] = useState(false);
+  const [activeShelf, setActiveShelf] = useState("reading");
 
   useEffect(() => {
     return onAuthStateChanged(auth, (u) => {
@@ -122,10 +126,10 @@ function LibraryPage() {
   if (!user) {
     return (
       <div className="flex h-[70vh] flex-col items-center justify-center text-center px-4">
-        <div className="mb-6 rounded-full bg-primary/10 p-6">
+        <div className="mb-6 rounded-full bg-primary/10 p-6 shadow-[0_0_40px_-10px_rgba(var(--primary),0.3)]">
           <LogIn className="h-12 w-12 text-primary" />
         </div>
-        <h1 className="font-display text-3xl font-bold tracking-tight">
+        <h1 className="font-display text-3xl font-bold tracking-tight text-foreground">
           Sign in to view your library
         </h1>
         <p className="mt-2 max-w-sm text-muted-foreground">
@@ -133,7 +137,7 @@ function LibraryPage() {
           across all devices.
         </p>
         <Button
-          className="mt-8 rounded-full px-8"
+          className="mt-8 rounded-full px-8 shadow-lg shadow-primary/20"
           onClick={() => (window.location.href = "/login")}
         >
           Sign In
@@ -151,184 +155,207 @@ function LibraryPage() {
   const customShelves = library?.customShelves || {};
   const continueReading = reading.filter((b: any) => library?.progress?.[b._id]);
 
+  const allShelves = [
+    ...SHELVES,
+    ...Object.keys(customShelves).map((name) => ({
+      id: name,
+      label: name,
+      icon: Bookmark,
+      isCustom: true,
+    })),
+  ];
+
+  const getBooksForShelf = (shelfId: string) => {
+    switch (shelfId) {
+      case "reading":
+        return reading;
+      case "favorites":
+        return favorites;
+      case "completed":
+        return completed;
+      case "to-read":
+        return toRead;
+      default:
+        return customShelves[shelfId] || [];
+    }
+  };
+
+  const activeBooks = getBooksForShelf(activeShelf);
+  const activeShelfLabel = allShelves.find((s) => s.id === activeShelf)?.label || activeShelf;
+
   return (
-    <div className="mx-auto max-w-[1600px] px-4 py-6 sm:px-6 md:px-8 xl:px-12 sm:py-10 space-y-8">
-      <header className="mb-10 flex flex-wrap items-end justify-between gap-6 border-b border-border/50 pb-6">
+    <div className="mx-auto max-w-[1600px] px-4 py-6 sm:px-6 md:px-8 xl:px-12 sm:py-10 min-h-[80vh]">
+      <header className="mb-10 flex flex-col md:flex-row md:items-end justify-between gap-6 border-b border-white/10 pb-6 relative">
+        <div className="absolute top-0 right-0 -z-10 h-32 w-32 bg-primary/20 blur-[100px] rounded-full opacity-50" />
         <div>
-          <h1 className="font-display text-4xl font-black sm:text-5xl tracking-tight">
+          <h1 className="font-display text-4xl font-black sm:text-5xl tracking-tight text-foreground drop-shadow-sm">
             My Library
           </h1>
           <p className="mt-2 text-base text-muted-foreground">
             Organize what you're reading and what's next.
           </p>
         </div>
-        <Dialog open={open} onOpenChange={setOpen}>
-          <DialogTrigger asChild>
-            <Button className="rounded-full shadow-md hover:shadow-lg transition-shadow">
-              <Plus className="mr-2 h-4 w-4" /> New Custom Shelf
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="rounded-3xl">
-            <DialogHeader>
-              <DialogTitle className="text-2xl">Create a new shelf</DialogTitle>
-            </DialogHeader>
-            <div className="py-4">
-              <Input
-                autoFocus
-                value={newShelf}
-                onChange={(e) => setNewShelf(e.target.value)}
-                placeholder="e.g. Summer reads, Book club, Sci-Fi..."
-                maxLength={40}
-                className="h-12 text-lg rounded-xl"
-              />
-            </div>
-            <DialogFooter>
-              <Button variant="ghost" className="rounded-full" onClick={() => setOpen(false)}>
-                Cancel
-              </Button>
-              <Button
-                className="rounded-full"
-                onClick={async () => {
-                  if (newShelf.trim()) {
-                    const token = await user!.getIdToken();
-                    await fetch(
-                      `${import.meta.env.VITE_API_URL || "http://localhost:9090"}/api/library/shelves`,
-                      {
-                        method: "POST",
-                        headers: {
-                          "Content-Type": "application/json",
-                          Authorization: `Bearer ${token}`,
-                        },
-                        body: JSON.stringify({
-                          targetShelf: newShelf.trim(),
-                          custom: true,
-                          action: "create",
-                        }),
-                      },
-                    );
-                    queryClient.invalidateQueries({ queryKey: ["library"] });
-                    setNewShelf("");
-                    setOpen(false);
-                  }
-                }}
-              >
-                Create Shelf
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
       </header>
 
-      {continueReading.length > 0 && (
-        <section className="mb-12">
-          <h2 className="mb-6 font-display text-2xl font-bold tracking-tight">Continue Reading</h2>
-          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6">
-            {continueReading.map((book: any) => (
-              <div key={book._id} className="flex flex-col items-center">
-                <BookCard
-                  book={{
-                    id: book._id,
-                    title: book.title,
-                    authorName: book.author,
-                    coverUrl: book.coverUrl,
-                    genre: book.genre || "Other",
-                    tags: book.tags || [],
-                    rating: 4.8,
-                    ratingCount: 152,
-                    language: book.language || "English",
-                  }}
-                />
-                {library.progress[book._id] && (
-                  <p className="mt-2 text-xs font-medium text-primary">
-                    Page {library.progress[book._id]}
-                  </p>
-                )}
-              </div>
-            ))}
+      <div className="flex flex-col md:flex-row gap-8 lg:gap-12">
+        {/* Sidebar */}
+        <aside className="w-full md:w-64 lg:w-72 shrink-0 flex flex-col gap-6">
+          <div className="flex items-center justify-between px-2">
+            <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
+              Your Shelves
+            </h3>
+            <Dialog open={open} onOpenChange={setOpen}>
+              <DialogTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8 rounded-full hover:bg-primary/20 hover:text-primary transition-colors focus-visible:ring-1 focus-visible:ring-primary"
+                >
+                  <Plus className="h-4 w-4" />
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="rounded-3xl border-white/10 bg-zinc-950/95 backdrop-blur-xl">
+                <DialogHeader>
+                  <DialogTitle className="text-2xl font-display">Create a new shelf</DialogTitle>
+                </DialogHeader>
+                <div className="py-4">
+                  <Input
+                    autoFocus
+                    value={newShelf}
+                    onChange={(e) => setNewShelf(e.target.value)}
+                    placeholder="e.g. Summer reads, Book club, Sci-Fi..."
+                    maxLength={40}
+                    className="h-12 text-lg rounded-xl border-white/10 bg-black/40 focus-visible:ring-primary/50 placeholder:text-muted-foreground/50"
+                  />
+                </div>
+                <DialogFooter>
+                  <Button variant="ghost" className="rounded-full hover:bg-white/5" onClick={() => setOpen(false)}>
+                    Cancel
+                  </Button>
+                  <Button
+                    className="rounded-full shadow-lg shadow-primary/20 transition-all hover:shadow-primary/40"
+                    onClick={async () => {
+                      if (newShelf.trim()) {
+                        const token = await user!.getIdToken();
+                        await fetch(
+                          `${import.meta.env.VITE_API_URL || "http://localhost:9090"}/api/library/shelves`,
+                          {
+                            method: "POST",
+                            headers: {
+                              "Content-Type": "application/json",
+                              Authorization: `Bearer ${token}`,
+                            },
+                            body: JSON.stringify({
+                              targetShelf: newShelf.trim(),
+                              custom: true,
+                              action: "create",
+                            }),
+                          },
+                        );
+                        queryClient.invalidateQueries({ queryKey: ["library"] });
+                        setNewShelf("");
+                        setOpen(false);
+                      }
+                    }}
+                  >
+                    Create Shelf
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
           </div>
-        </section>
-      )}
 
-      <Tabs defaultValue="reading" className="w-full">
-        <TabsList className="flex flex-wrap h-auto bg-transparent gap-2 mb-8">
-          {SHELVES.map((s) => {
-            const count = (
-              s.id === "reading"
-                ? reading
-                : s.id === "favorites"
-                  ? favorites
-                  : s.id === "completed"
-                    ? completed
-                    : s.id === "to-read"
-                      ? toRead
-                      : []
-            ).length;
+          {/* Shelves Navigation */}
+          <nav className="flex md:flex-col gap-2 overflow-x-auto md:overflow-visible pb-4 md:pb-0 scrollbar-hide -mx-4 px-4 md:mx-0 md:px-0">
+            {allShelves.map((s) => {
+              const isActive = activeShelf === s.id;
+              const count = getBooksForShelf(s.id).length;
 
-            return (
-              <TabsTrigger
-                key={s.id}
-                value={s.id}
-                className="rounded-full px-6 py-3 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md border border-transparent data-[state=inactive]:border-border/50 data-[state=inactive]:hover:bg-accent/50 transition-all"
-              >
-                <s.icon className="mr-2 h-4 w-4" />
-                <span className="font-medium text-sm">{s.label}</span>
-                <span className="ml-2 text-xs font-bold opacity-60 bg-foreground/10 px-1.5 py-0.5 rounded-full">
-                  {count}
-                </span>
-              </TabsTrigger>
-            );
-          })}
+              return (
+                <button
+                  key={s.id}
+                  onClick={() => setActiveShelf(s.id)}
+                  className={cn(
+                    "flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-medium transition-all duration-300 relative whitespace-nowrap shrink-0 md:shrink md:w-full border",
+                    isActive
+                      ? "bg-primary/10 text-primary border-primary/20 shadow-[0_0_20px_-5px_rgba(var(--primary),0.2)]"
+                      : "bg-transparent text-muted-foreground border-transparent hover:bg-white/5 hover:text-foreground"
+                  )}
+                >
+                  <s.icon className={cn("h-5 w-5", isActive ? "text-primary drop-shadow-[0_0_8px_rgba(var(--primary),0.5)]" : "")} />
+                  <span className="flex-1 text-left">{s.label}</span>
+                  <span
+                    className={cn(
+                      "text-xs font-bold px-2 py-0.5 rounded-full transition-colors ml-3",
+                      isActive
+                        ? "bg-primary/20 text-primary"
+                        : "bg-white/10 text-muted-foreground"
+                    )}
+                  >
+                    {count}
+                  </span>
+                  {isActive && (
+                    <div className="absolute inset-0 rounded-2xl ring-1 ring-inset ring-primary/20 pointer-events-none" />
+                  )}
+                </button>
+              );
+            })}
+          </nav>
+        </aside>
 
-          {Object.keys(customShelves).map((shelfName) => (
-            <TabsTrigger
-              key={shelfName}
-              value={shelfName}
-              className="rounded-full px-6 py-3 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md border border-transparent data-[state=inactive]:border-border/50 data-[state=inactive]:hover:bg-accent/50 transition-all"
-            >
-              <BookMarked className="mr-2 h-4 w-4" />
-              <span className="font-medium text-sm">{shelfName}</span>
-              <span className="ml-2 text-xs font-bold opacity-60 bg-foreground/10 px-1.5 py-0.5 rounded-full">
-                {customShelves[shelfName].length}
+        {/* Main Content Area */}
+        <main className="flex-1 min-w-0 flex flex-col gap-12">
+          {activeShelf === "reading" && continueReading.length > 0 && (
+            <section>
+              <h2 className="mb-6 font-display text-2xl font-bold tracking-tight flex items-center gap-2">
+                <div className="h-2 w-2 rounded-full bg-primary shadow-[0_0_8px_rgba(var(--primary),0.8)] animate-pulse" />
+                Continue Reading
+              </h2>
+              <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+                {continueReading.map((book: any) => (
+                  <div key={book._id} className="flex flex-col items-center group">
+                    <BookCard
+                      book={{
+                        id: book._id,
+                        slug: book.slug || book._id,
+                        title: book.title,
+                        authorName: book.author,
+                        coverUrl: book.coverUrl,
+                        genre: book.genre || "Other",
+                        tags: book.tags || [],
+                        rating: 4.8,
+                        ratingCount: 152,
+                        language: book.language || "English",
+                        pages: book.pages || 0,
+                        publishedYear: book.publishedYear || null,
+                      }}
+                    />
+                    {library.progress[book._id] && (
+                      <div className="mt-3 flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary border border-primary/20 transition-all group-hover:bg-primary/20 group-hover:shadow-[0_0_12px_rgba(var(--primary),0.3)]">
+                        <BookMarked className="h-3 w-3" />
+                        Page {library.progress[book._id]}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </section>
+          )}
+
+          <section>
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="font-display text-2xl font-bold tracking-tight capitalize">
+                {activeShelfLabel}
+              </h2>
+              <span className="text-sm font-medium text-muted-foreground bg-white/5 px-3 py-1 rounded-full border border-white/10">
+                {activeBooks.length} {activeBooks.length === 1 ? "book" : "books"}
               </span>
-            </TabsTrigger>
-          ))}
-        </TabsList>
-
-        <TabsContent
-          value="reading"
-          className="focus-visible:outline-none focus-visible:ring-0 mt-0"
-        >
-          <ShelfGrid books={reading} />
-        </TabsContent>
-        <TabsContent
-          value="favorites"
-          className="focus-visible:outline-none focus-visible:ring-0 mt-0"
-        >
-          <ShelfGrid books={favorites} />
-        </TabsContent>
-        <TabsContent
-          value="completed"
-          className="focus-visible:outline-none focus-visible:ring-0 mt-0"
-        >
-          <ShelfGrid books={completed} />
-        </TabsContent>
-        <TabsContent
-          value="to-read"
-          className="focus-visible:outline-none focus-visible:ring-0 mt-0"
-        >
-          <ShelfGrid books={toRead} />
-        </TabsContent>
-
-        {Object.entries(customShelves).map(([shelfName, books]: [string, any]) => (
-          <TabsContent
-            key={shelfName}
-            value={shelfName}
-            className="focus-visible:outline-none focus-visible:ring-0 mt-0"
-          >
-            <ShelfGrid books={books} />
-          </TabsContent>
-        ))}
-      </Tabs>
+            </div>
+            
+            <ShelfGrid books={activeBooks} />
+          </section>
+        </main>
+      </div>
     </div>
   );
 }
