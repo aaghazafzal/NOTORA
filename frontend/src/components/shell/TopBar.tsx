@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
-import { Bell, Search } from "lucide-react";
+import { Bell, Search, X } from "lucide-react";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -32,6 +32,63 @@ import { signOut } from "firebase/auth";
 import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
 
+function NotificationItem({ b, t, onDismiss }: any) {
+  const [startX, setStartX] = useState(0);
+  const [translateX, setTranslateX] = useState(0);
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    setStartX(e.touches[0].clientX);
+  };
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (startX === 0) return;
+    const currentX = e.touches[0].clientX;
+    const diff = currentX - startX;
+    if (diff > 0) {
+      setTranslateX(diff);
+    }
+  };
+  const handleTouchEnd = () => {
+    if (translateX > 80) {
+      onDismiss(b._id);
+    } else {
+      setTranslateX(0);
+    }
+    setStartX(0);
+  };
+
+  return (
+    <li
+      className="relative rounded-lg border border-border p-0 bg-accent/30 hover:bg-accent/50 transition-all overflow-hidden group touch-pan-y"
+      style={{ transform: `translateX(${translateX}px)`, opacity: translateX > 80 ? 0 : 1 }}
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
+    >
+      <Link to="/book/$bookId" params={{ bookId: b._id }} className="block p-3">
+        <div className="flex justify-between items-start">
+          <div className="text-sm font-semibold text-primary">{t("New book uploaded!")}</div>
+          <button
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              onDismiss(b._id);
+            }}
+            className="hidden sm:flex h-6 w-6 items-center justify-center rounded-full hover:bg-background/80 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity"
+            aria-label="Dismiss"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+        <div className="mt-1 text-sm text-foreground font-medium pr-6">{b.title}</div>
+        <div className="mt-1 text-xs text-muted-foreground line-clamp-1">{t("by")} {b.author}</div>
+        <div className="mt-2 text-[10px] text-muted-foreground">
+          {new Date(b.uploadDate).toLocaleDateString()}
+        </div>
+      </Link>
+    </li>
+  );
+}
+
 export function TopBar() {
   const { t } = useTranslation();
   const [q, setQ] = useState("");
@@ -47,6 +104,14 @@ export function TopBar() {
     }
   });
 
+  const [dismissedNotifs, setDismissedNotifs] = useState<string[]>(() => {
+    try {
+      return JSON.parse(localStorage.getItem("notora-dismissed-notifs") || "[]");
+    } catch {
+      return [];
+    }
+  });
+
   const { data: newBooks } = useQuery({
     queryKey: ["notifications", "new-books"],
     queryFn: async () => {
@@ -59,7 +124,15 @@ export function TopBar() {
     refetchInterval: 30000,
   });
 
-  const unreadCount = newBooks ? newBooks.filter((b: any) => new Date(b.uploadDate).getTime() > lastSeenTime).length : 0;
+  const activeNewBooks = newBooks?.filter((b: any) => !dismissedNotifs.includes(b._id)) || [];
+
+  const unreadCount = activeNewBooks.filter((b: any) => new Date(b.uploadDate).getTime() > lastSeenTime).length;
+
+  const handleDismiss = (id: string) => {
+    const next = [...dismissedNotifs, id];
+    setDismissedNotifs(next);
+    localStorage.setItem("notora-dismissed-notifs", JSON.stringify(next));
+  };
 
   const handleOpenNotifs = (open: boolean) => {
     if (open && newBooks && newBooks.length > 0) {
@@ -138,22 +211,10 @@ export function TopBar() {
                 <SheetTitle>{t("Notifications")}</SheetTitle>
               </SheetHeader>
               <ul className="mt-4 space-y-2">
-                {newBooks?.map((b: any) => (
-                  <li
-                    key={b._id}
-                    className="rounded-lg border border-border p-0 bg-accent/30 hover:bg-accent/50 transition-colors overflow-hidden"
-                  >
-                    <Link to="/book/$bookId" params={{ bookId: b._id }} className="block p-3">
-                      <div className="text-sm font-semibold text-primary">{t("New book uploaded!")}</div>
-                      <div className="mt-1 text-sm text-foreground font-medium">{b.title}</div>
-                      <div className="mt-1 text-xs text-muted-foreground line-clamp-1">{t("by")} {b.author}</div>
-                      <div className="mt-2 text-[10px] text-muted-foreground">
-                        {new Date(b.uploadDate).toLocaleDateString()}
-                      </div>
-                    </Link>
-                  </li>
+                {activeNewBooks.map((b: any) => (
+                  <NotificationItem key={b._id} b={b} t={t} onDismiss={handleDismiss} />
                 ))}
-                {(!newBooks || newBooks.length === 0) && (
+                {activeNewBooks.length === 0 && (
                   <div className="text-sm text-muted-foreground text-center py-4">{t("No new notifications")}</div>
                 )}
               </ul>
