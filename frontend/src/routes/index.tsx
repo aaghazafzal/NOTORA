@@ -15,6 +15,7 @@ import { BookCard } from "@/components/BookCard";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { coverStyle } from "@/lib/cover";
+import { useTranslation } from "react-i18next";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -82,6 +83,7 @@ function HeroSkeleton() {
 }
 
 function Row({ title, books }: { title: string; books: Book[] }) {
+  const { t } = useTranslation();
   const scrollRef = useRef<HTMLDivElement>(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(true);
@@ -115,13 +117,13 @@ function Row({ title, books }: { title: string; books: Book[] }) {
     <section className="space-y-2 group/row relative">
       <div className="flex items-end justify-between gap-4">
         <div className="min-w-0">
-          <h2 className="truncate font-display text-2xl font-bold">{title}</h2>
+          <h2 className="truncate font-display text-2xl font-bold">{t(title)}</h2>
         </div>
         <Link
           to="/browse"
           className="hidden shrink-0 items-center gap-1 text-sm text-muted-foreground hover:text-foreground sm:flex"
         >
-          See all <ArrowRight className="h-4 w-4" />
+          {t("See all")} <ArrowRight className="h-4 w-4" />
         </Link>
       </div>
 
@@ -169,6 +171,7 @@ function Row({ title, books }: { title: string; books: Book[] }) {
 }
 
 function HomePage() {
+  const { t } = useTranslation();
   const { data: realBooks = [], isLoading } = useQuery({
     queryKey: ["home-books"],
     queryFn: async () => {
@@ -230,7 +233,7 @@ function HomePage() {
                 {hero.title}
               </h1>
               <p className="mt-2 text-sm text-muted-foreground sm:text-base lg:text-lg">
-                by {hero.authorName} · {hero.pages} pages · {hero.genre}
+                by {hero.authorName} · {hero.pages} {t("pages")} · {t(hero.genre)}
               </p>
               <p className="mt-4 max-w-2xl text-sm text-foreground/85 sm:text-base lg:text-lg line-clamp-3">
                 {hero.description}
@@ -238,7 +241,7 @@ function HomePage() {
               <div className="mt-6 flex flex-wrap gap-3">
                 <Button asChild size="lg" className="neon-glow rounded-full">
                   <Link to="/read/$bookId" params={{ bookId: hero.slug }}>
-                    Start reading
+                    {t("Start reading")}
                   </Link>
                 </Button>
                 <Button
@@ -252,7 +255,7 @@ function HomePage() {
                     params={{ bookId: hero.slug }}
                     className="flex items-center justify-center"
                   >
-                    <span className="hidden sm:inline">About book</span>
+                    <span className="hidden sm:inline">{t("About book")}</span>
                     <Info className="h-5 w-5 sm:hidden" />
                   </Link>
                 </Button>
@@ -297,9 +300,9 @@ function HomePage() {
       <section className="space-y-4 pt-8">
         <div className="flex items-center gap-2 text-primary">
           <Compass className="h-4 w-4" />
-          <span className="text-xs font-semibold uppercase tracking-wider">Explore</span>
+          <span className="text-xs font-semibold uppercase tracking-wider">{t("Explore")}</span>
         </div>
-        <h2 className="font-display text-2xl font-bold">Browse by genre</h2>
+        <h2 className="font-display text-2xl font-bold">{t("Browse by genre")}</h2>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
           {allGenres.map((g) => (
             <Link
@@ -308,7 +311,7 @@ function HomePage() {
               search={{ genres: [g] }}
               className="group flex flex-col justify-between overflow-hidden rounded-xl border border-border bg-card p-4 transition-colors hover:border-primary/50 hover:bg-accent"
             >
-              <span className="font-display font-medium group-hover:text-primary">{g}</span>
+              <span className="font-display font-medium group-hover:text-primary">{t(g)}</span>
               <ArrowRight className="mt-4 h-4 w-4 text-muted-foreground opacity-0 transition-all group-hover:translate-x-1 group-hover:opacity-100 group-hover:text-primary" />
             </Link>
           ))}
