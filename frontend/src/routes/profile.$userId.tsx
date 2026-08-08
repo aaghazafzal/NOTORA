@@ -124,6 +124,46 @@ function ProfilePage() {
     enabled: !!profileId,
   });
 
+  // Fetch follow status
+  const { data: followData, refetch: refetchFollow } = useQuery({
+    queryKey: ["follow-status", profileId, currentUser?.uid],
+    queryFn: async () => {
+      if (!profileId || !currentUser) return { isFollowing: false };
+      const res = await fetch(
+        `${import.meta.env.VITE_API_URL || "http://localhost:9090"}/api/users/${profileId}/follow-status?currentUid=${currentUser.uid}`
+      );
+      if (!res.ok) return { isFollowing: false };
+      return res.json();
+    },
+    enabled: !!profileId && !!currentUser && !isMe,
+  });
+
+  const toggleFollow = async () => {
+    if (!currentUser) {
+      navigate({ to: "/auth/sign-in" });
+      return;
+    }
+    try {
+      const res = await fetch(
+        `${import.meta.env.VITE_API_URL || "http://localhost:9090"}/api/users/${profileId}/follow`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ currentUid: currentUser.uid })
+        }
+      );
+      if (res.ok) {
+        refetchFollow();
+        refetchUser(); // To update the followers count
+      } else {
+        toast.error("Failed to update follow status");
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to update follow status");
+    }
+  };
+
   const handleUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!currentUser) return;
@@ -222,8 +262,9 @@ function ProfilePage() {
   const displayBio =
     dbUser?.bio ||
     t("Avid reader, curator of fine literature, and active contributor to the Notora community. Always looking for the next great story.");
-  const displayFollowers = dbUser?.followers || 142;
-  const displayFollowing = dbUser?.following || 89;
+  const displayFollowers = dbUser?.followers || 0;
+  const displayFollowing = dbUser?.following || 0;
+  const isFollowing = followData?.isFollowing || false;
 
   const baseNameForHandle = isMe && currentUser?.email ? currentUser.email.split("@")[0] : (displayName ? displayName.toLowerCase().replace(/\s+/g, '') : "reader");
   const generatedHandle = `@${baseNameForHandle}`;
@@ -341,10 +382,10 @@ function ProfilePage() {
             ) : (
               <Button
                 className="rounded-full shadow-sm px-6"
-                variant={following ? "outline" : "default"}
-                onClick={() => setFollowing((v) => !v)}
+                variant={isFollowing ? "outline" : "default"}
+                onClick={toggleFollow}
               >
-                {following ? "Following" : "Follow"}
+                {isFollowing ? t("Following") : t("Follow")}
               </Button>
             )}
           </div>
@@ -384,13 +425,15 @@ function ProfilePage() {
 
         {/* 4. TABS INTERFACE */}
         <Tabs defaultValue="uploads" className="w-full">
-          <TabsList className="w-full justify-start rounded-none border-b bg-transparent h-auto p-0 mb-8 overflow-x-auto flex-nowrap hide-scrollbar">
-            <TabsTrigger
-              value="uploads"
-              className="rounded-none border-b-2 border-transparent px-6 py-4 font-medium data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:text-foreground text-muted-foreground whitespace-nowrap"
-            >
-              {t("Uploads")} ({uploadedBooks.length})
-            </TabsTrigger>
+          <TabsList className="w-full justify-start overflow-x-auto no-scrollbar rounded-none border-b border-border bg-transparent p-0 h-auto gap-8">
+            {uploadedBooks.length > 0 && (
+              <TabsTrigger
+                value="uploads"
+                className="rounded-none border-b-2 border-transparent px-2 py-4 data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none text-base"
+              >
+                {t("Published")} <span className="ml-2 rounded-full bg-accent px-2 py-0.5 text-xs text-foreground">{uploadedBooks.length}</span>
+              </TabsTrigger>
+            )}
             <TabsTrigger
               value="reviews"
               className="rounded-none border-b-2 border-transparent px-6 py-4 font-medium data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:text-foreground text-muted-foreground whitespace-nowrap"

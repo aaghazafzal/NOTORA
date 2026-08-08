@@ -3,6 +3,7 @@ const bookSchema = require('./models/Book');
 const librarySchema = require('./models/Library');
 const userSchema = require('./models/User');
 const reviewSchema = require('./models/Review');
+const followSchema = require('./models/Follow');
 
 const URIs = [
     "mongodb+srv://notora:aaghaz9431@notora.fvaoxen.mongodb.net/?appName=notora",
@@ -22,6 +23,7 @@ class MultiDBManager {
             conn.model('User', userSchema);
             conn.model('Library', librarySchema);
             conn.model('Review', reviewSchema);
+            conn.model('Follow', followSchema);
             await conn.asPromise();
             this.connections.push(conn);
             console.log(`Connected to Database ${i + 1}`);
@@ -55,6 +57,10 @@ class MultiDBManager {
     // since they take up very little space and we want to avoid fragmentation.
     getUserModel() {
         return this.connections[0].model('User');
+    }
+
+    getFollowModel() {
+        return this.connections[0].model('Follow');
     }
 
     getLibraryModel() {

@@ -32,7 +32,7 @@ import { signOut } from "firebase/auth";
 import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
 
-function NotificationItem({ b, t, onDismiss }: any) {
+function NotificationItem({ notif, t, onDismiss }: any) {
   const [startX, setStartX] = useState(0);
   const [translateX, setTranslateX] = useState(0);
 
@@ -49,12 +49,14 @@ function NotificationItem({ b, t, onDismiss }: any) {
   };
   const handleTouchEnd = () => {
     if (translateX > 80) {
-      onDismiss(b._id);
+      onDismiss(notif.notifId);
     } else {
       setTranslateX(0);
     }
     setStartX(0);
   };
+
+  const isBook = notif.type === "BOOK";
 
   return (
     <li
@@ -64,25 +66,47 @@ function NotificationItem({ b, t, onDismiss }: any) {
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
     >
-      <Link to="/book/$bookId" params={{ bookId: b._id }} className="block p-3">
-        <div className="flex justify-between items-start">
-          <div className="text-sm font-semibold text-primary">{t("New book uploaded!")}</div>
+      <Link 
+        to={isBook ? "/book/$bookId" : "/profile/$userId"} 
+        params={isBook ? { bookId: notif._id } : { userId: notif.followerId }} 
+        className="block p-3"
+      >
+        <div className="flex justify-between items-start gap-2">
+          {isBook ? (
+            <div className="text-sm font-semibold text-primary">{t("New book uploaded!")}</div>
+          ) : (
+            <div className="flex items-center gap-2">
+              <Avatar className="h-6 w-6">
+                <AvatarImage src={notif.followerPhoto || undefined} className="object-cover" />
+                <AvatarFallback className="text-[10px]">{notif.followerName?.charAt(0).toUpperCase()}</AvatarFallback>
+              </Avatar>
+              <div className="text-sm font-semibold text-primary">{t("New follower!")}</div>
+            </div>
+          )}
           <button
             onClick={(e) => {
               e.preventDefault();
               e.stopPropagation();
-              onDismiss(b._id);
+              onDismiss(notif.notifId);
             }}
-            className="hidden sm:flex h-6 w-6 items-center justify-center rounded-full hover:bg-background/80 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity"
+            className="hidden sm:flex h-6 w-6 items-center justify-center rounded-full hover:bg-background/80 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
             aria-label="Dismiss"
           >
             <X className="h-4 w-4" />
           </button>
         </div>
-        <div className="mt-1 text-sm text-foreground font-medium pr-6">{b.title}</div>
-        <div className="mt-1 text-xs text-muted-foreground line-clamp-1">{t("by")} {b.author}</div>
+        {isBook ? (
+          <>
+            <div className="mt-1 text-sm text-foreground font-medium pr-6">{notif.title}</div>
+            <div className="mt-1 text-xs text-muted-foreground line-clamp-1">{t("by")} {notif.author}</div>
+          </>
+        ) : (
+          <div className="mt-2 text-sm text-foreground font-medium pr-6">
+            <span className="font-semibold">{notif.followerName}</span> {t("started following you")}
+          </div>
+        )}
         <div className="mt-2 text-[10px] text-muted-foreground">
-          {new Date(b.uploadDate).toLocaleDateString()}
+          {new Date(notif.notifDate).toLocaleDateString()}
         </div>
       </Link>
     </li>
@@ -124,9 +148,39 @@ export function TopBar() {
     refetchInterval: 30000,
   });
 
-  const activeNewBooks = newBooks?.filter((b: any) => !dismissedNotifs.includes(b._id)) || [];
+  const { data: newFollowers } = useQuery({
+    queryKey: ["notifications", "new-followers"],
+    queryFn: async () => {
+      if (!user) return [];
+      const res = await fetch(`${import.meta.env.VITE_API_URL || "http://localhost:9090"}/api/users/${user.uid}/recent-followers`);
+      if (!res.ok) return [];
+      return res.json();
+    },
+    enabled: !!user,
+    refetchInterval: 30000,
+  });
 
-  const unreadCount = activeNewBooks.filter((b: any) => new Date(b.uploadDate).getTime() > lastSeenTime).length;
+  const allNotifs = (() => {
+    const books = (newBooks || []).map((b: any) => ({
+      ...b,
+      type: "BOOK",
+      notifId: `book-${b._id}`,
+      notifDate: new Date(b.uploadDate).getTime()
+    }));
+    
+    const followers = (newFollowers || []).map((f: any) => ({
+      ...f,
+      type: "FOLLOWER",
+      notifId: `follow-${f._id}`,
+      notifDate: new Date(f.createdAt).getTime()
+    }));
+    
+    return [...books, ...followers].sort((a, b) => b.notifDate - a.notifDate);
+  })();
+
+  const activeNotifs = allNotifs.filter((n: any) => !dismissedNotifs.includes(n.notifId));
+
+  const unreadCount = activeNotifs.filter((n: any) => n.notifDate > lastSeenTime).length;
 
   const handleDismiss = (id: string) => {
     const next = [...dismissedNotifs, id];
@@ -135,10 +189,12 @@ export function TopBar() {
   };
 
   const handleOpenNotifs = (open: boolean) => {
-    if (open && newBooks && newBooks.length > 0) {
-      const latest = Math.max(...newBooks.map((b: any) => new Date(b.uploadDate).getTime()));
-      setLastSeenTime(latest);
-      localStorage.setItem("notora-last-seen-notif", latest.toString());
+    if (open && activeNotifs.length > 0) {
+      const latest = activeNotifs[0].notifDate;
+      if (latest > lastSeenTime) {
+        setLastSeenTime(latest);
+        localStorage.setItem("notora-last-seen-notif", latest.toString());
+      }
     }
   };
 
@@ -210,14 +266,22 @@ export function TopBar() {
               <SheetHeader>
                 <SheetTitle>{t("Notifications")}</SheetTitle>
               </SheetHeader>
-              <ul className="mt-4 space-y-2">
-                {activeNewBooks.map((b: any) => (
-                  <NotificationItem key={b._id} b={b} t={t} onDismiss={handleDismiss} />
-                ))}
-                {activeNewBooks.length === 0 && (
+              <div className="mt-4">
+                {activeNotifs.length > 0 ? (
+                  <ul className="flex flex-col gap-2 p-1">
+                    {activeNotifs.map((notif: any) => (
+                      <NotificationItem 
+                        key={notif.notifId} 
+                        notif={notif} 
+                        t={t} 
+                        onDismiss={handleDismiss} 
+                      />
+                    ))}
+                  </ul>
+                ) : (
                   <div className="text-sm text-muted-foreground text-center py-4">{t("No new notifications")}</div>
                 )}
-              </ul>
+              </div>
             </SheetContent>
           </Sheet>
         )}

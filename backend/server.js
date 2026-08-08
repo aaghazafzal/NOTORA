@@ -661,6 +661,81 @@ app.post('/api/library/progress', verifyToken, async (req, res) => {
 });
 
 // User Profile Routes
+
+// Follow Routes
+app.get('/api/users/:uid/follow-status', async (req, res) => {
+    try {
+        const { currentUid } = req.query;
+        if (!currentUid) return res.json({ isFollowing: false });
+        
+        const Follow = dbManager.getFollowModel();
+        const follow = await Follow.findOne({ followerId: currentUid, followingId: req.params.uid });
+        res.json({ isFollowing: !!follow });
+    } catch (err) {
+        console.error('Failed to get follow status:', err);
+        res.status(500).json({ error: 'Failed to get follow status' });
+    }
+});
+
+app.post('/api/users/:uid/follow', async (req, res) => {
+    try {
+        const targetUid = req.params.uid;
+        const { currentUid } = req.body;
+        
+        if (!currentUid || currentUid === targetUid) {
+            return res.status(400).json({ error: 'Invalid request' });
+        }
+        
+        const Follow = dbManager.getFollowModel();
+        const User = dbManager.getUserModel();
+        
+        const existingFollow = await Follow.findOne({ followerId: currentUid, followingId: targetUid });
+        
+        let isFollowing = false;
+        if (existingFollow) {
+            // Unfollow
+            await Follow.deleteOne({ _id: existingFollow._id });
+            await User.updateOne({ uid: targetUid }, { $inc: { followers: -1 } });
+            await User.updateOne({ uid: currentUid }, { $inc: { following: -1 } });
+            isFollowing = false;
+        } else {
+            // Follow
+            await Follow.create({ followerId: currentUid, followingId: targetUid });
+            await User.updateOne({ uid: targetUid }, { $inc: { followers: 1 } });
+            await User.updateOne({ uid: currentUid }, { $inc: { following: 1 } });
+            isFollowing = true;
+        }
+        
+        const updatedUser = await User.findOne({ uid: targetUid });
+        res.json({ isFollowing, followers: updatedUser.followers, following: updatedUser.following });
+    } catch (err) {
+        console.error('Failed to toggle follow:', err);
+        res.status(500).json({ error: 'Failed to toggle follow' });
+    }
+});
+
+app.get('/api/users/:uid/recent-followers', async (req, res) => {
+    try {
+        const Follow = dbManager.getFollowModel();
+        const User = dbManager.getUserModel();
+        const follows = await Follow.find({ followingId: req.params.uid }).sort({ createdAt: -1 }).limit(10);
+        
+        const followers = await Promise.all(follows.map(async (f) => {
+            const u = await User.findOne({ uid: f.followerId }).lean();
+            return {
+                ...f.toObject(),
+                followerName: u ? u.name : 'Unknown User',
+                followerPhoto: u ? u.photoUrl : null
+            };
+        }));
+        
+        res.json(followers);
+    } catch (err) {
+        console.error('Failed to fetch recent followers:', err);
+        res.status(500).json({ error: 'Failed to fetch recent followers' });
+    }
+});
+
 app.get('/api/users/:uid', async (req, res) => {
     try {
         const User = dbManager.getUserModel();
