@@ -10,6 +10,8 @@ import {
   Compass,
   ArrowRight,
   Star,
+  Trash2,
+  Edit3
 } from "lucide-react";
 import { useRef, useState, useEffect } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -23,6 +25,17 @@ import { useAppStore } from "@/lib/store";
 import { useAuthStore } from "@/store/useAuthStore";
 import { toast } from "sonner";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 import type { Book } from "@/data/books";
 
@@ -287,6 +300,8 @@ function BookPage() {
   const [rating, setRating] = useState(0);
   const [reviewText, setReviewText] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
 
   useEffect(() => {
     if (userReview) {
@@ -326,14 +341,46 @@ function BookPage() {
       // Update book object in memory with new average 
       book.averageRating = data.averageRating;
       book.ratingCount = data.ratingCount;
-
       toast.success("Review submitted!");
-      queryClient.invalidateQueries({ queryKey: ["book-reviews", book.id] });
       queryClient.invalidateQueries({ queryKey: ["user-review", book.id, user.uid] });
-    } catch (err) {
-      toast.error("Error submitting review");
+      queryClient.invalidateQueries({ queryKey: ["book-reviews", book.id] });
+      setIsEditing(false);
+    } catch (err: any) {
+      toast.error(err.message || "Something went wrong");
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const deleteReview = async () => {
+    if (!user) return;
+    setIsDeleting(true);
+    try {
+      const token = await user.getIdToken();
+      const res = await fetch(`${import.meta.env.VITE_API_URL || "http://localhost:9090"}/api/books/${book.id}/rate`, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      });
+      
+      if (!res.ok) throw new Error("Failed to delete review");
+      
+      const data = await res.json();
+      book.averageRating = data.averageRating;
+      book.ratingCount = data.ratingCount;
+      
+      setRating(0);
+      setReviewText("");
+      setIsEditing(false);
+      toast.success("Review deleted");
+      
+      queryClient.invalidateQueries({ queryKey: ["user-review", book.id, user.uid] });
+      queryClient.invalidateQueries({ queryKey: ["book-reviews", book.id] });
+    } catch (err: any) {
+      toast.error(err.message || "Failed to delete review");
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -398,46 +445,106 @@ function BookPage() {
       </TabsContent>
       
       <TabsContent value="reviews" className="mt-6 animate-in fade-in slide-in-from-bottom-2 duration-500 space-y-8">
-        <div className="rounded-2xl border border-border bg-card/50 p-6 shadow-sm">
-          <h3 className="text-lg font-semibold mb-4 text-foreground">
-            {user ? "Write a Review" : "Login to Review"}
-          </h3>
-          <div className="space-y-4">
-            <div>
-              <StarRating rating={rating} setRating={user ? setRating : undefined} readonly={!user} size="lg" />
-            </div>
-            {user && (
-              <>
-                <div className="relative">
-                  <Textarea
-                    placeholder="What did you think of this book?"
-                    value={reviewText}
-                    onChange={(e) => setReviewText(e.target.value.substring(0, 300))}
-                    className="min-h-[100px] resize-none bg-background/50 focus-visible:ring-primary/20"
-                  />
-                  <div className={`absolute bottom-2 right-2 text-xs font-medium ${reviewText.length >= 300 ? 'text-destructive' : 'text-muted-foreground/50'}`}>
-                    {reviewText.length}/300
-                  </div>
-                </div>
-                <Button 
-                  onClick={submitReview} 
-                  disabled={isSubmitting || rating === 0}
-                  className="rounded-full neon-glow px-8"
-                >
-                  {isSubmitting ? "Submitting..." : "Submit Review"}
-                </Button>
-              </>
+        {(!userReview || userReview.rating === 0 || isEditing) && (
+          <div className="rounded-2xl border border-border bg-card/50 p-6 shadow-sm relative">
+            {isEditing && (
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="absolute top-4 right-4 text-muted-foreground"
+                onClick={() => setIsEditing(false)}
+              >
+                Cancel Edit
+              </Button>
             )}
+            <h3 className="text-lg font-semibold mb-4 text-foreground">
+              {user ? (isEditing ? "Edit your Review" : "Write a Review") : "Login to Review"}
+            </h3>
+            <div className="space-y-4">
+              <div>
+                <StarRating rating={rating} setRating={user ? setRating : undefined} readonly={!user} size="lg" />
+              </div>
+              {user && (
+                <>
+                  <div className="relative">
+                    <Textarea
+                      placeholder="What did you think of this book?"
+                      value={reviewText}
+                      onChange={(e) => setReviewText(e.target.value.substring(0, 300))}
+                      className="min-h-[100px] resize-none bg-background/50 focus-visible:ring-primary/20"
+                    />
+                    <div className={`absolute bottom-2 right-2 text-xs font-medium ${reviewText.length >= 300 ? 'text-destructive' : 'text-muted-foreground/50'}`}>
+                      {reviewText.length}/300
+                    </div>
+                  </div>
+                  <Button 
+                    onClick={submitReview} 
+                    disabled={isSubmitting || rating === 0}
+                    className="rounded-full neon-glow px-8"
+                  >
+                    {isSubmitting ? "Submitting..." : (isEditing ? "Update Review" : "Submit Review")}
+                  </Button>
+                </>
+              )}
+            </div>
           </div>
-        </div>
+        )}
 
         <div className="space-y-6">
           <h3 className="text-lg font-semibold text-foreground border-b border-border pb-2">Community Reviews</h3>
-          {reviews.length === 0 ? (
+          
+          {userReview && userReview.rating > 0 && !isEditing && (
+            <div className="rounded-2xl border border-primary/30 bg-primary/5 p-6 shadow-sm relative">
+              <div className="absolute top-4 right-4 flex items-center gap-2">
+                <Button variant="ghost" size="icon" onClick={() => setIsEditing(true)} className="h-8 w-8 text-muted-foreground hover:text-primary">
+                  <Edit3 className="h-4 w-4" />
+                </Button>
+                
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive">
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Delete Review?</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        Are you sure you want to delete your review? This action cannot be undone.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                      <AlertDialogAction onClick={deleteReview} className="bg-destructive hover:bg-destructive/90">
+                        {isDeleting ? "Deleting..." : "Delete"}
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              </div>
+
+              <div className="flex gap-4">
+                <Avatar className="h-10 w-10 border border-primary/20 shrink-0">
+                  <AvatarFallback className="bg-primary/10 text-primary">{user.displayName ? user.displayName.charAt(0).toUpperCase() : 'U'}</AvatarFallback>
+                </Avatar>
+                <div className="flex-1 space-y-1">
+                  <div className="flex items-center justify-between mr-16">
+                    <p className="font-semibold text-sm text-foreground">Your Review</p>
+                  </div>
+                  <StarRating rating={userReview.rating} readonly size="sm" />
+                  {userReview.reviewText && (
+                    <p className="text-sm text-muted-foreground mt-3">{userReview.reviewText}</p>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {reviews.filter((r: any) => r.userId !== user?.uid).length === 0 && (!userReview || userReview.rating === 0) ? (
             <p className="text-muted-foreground text-sm py-4 text-center">No reviews yet. Be the first to review!</p>
           ) : (
             <div className="space-y-6">
-              {reviews.map((r: any) => (
+              {reviews.filter((r: any) => r.userId !== user?.uid).map((r: any) => (
                 <div key={r._id} className="flex gap-4">
                   <Avatar className="h-10 w-10 border border-border shrink-0">
                     <AvatarFallback>{r.userName.charAt(0).toUpperCase()}</AvatarFallback>

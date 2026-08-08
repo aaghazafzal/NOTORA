@@ -315,6 +315,35 @@ app.post('/api/books/:id/rate', verifyToken, async (req, res) => {
     }
 });
 
+app.delete('/api/books/:id/rate', verifyToken, async (req, res) => {
+    try {
+        const userId = req.user.uid;
+        const bookId = req.params.id;
+
+        const Review = dbManager.getReviewModel();
+        
+        const review = await Review.findOneAndDelete({ bookId, userId });
+        if (!review) {
+            return res.status(404).json({ error: 'Review not found' });
+        }
+
+        // Recalculate average
+        const allReviews = await Review.find({ bookId });
+        const count = allReviews.length;
+        const averageRating = count > 0 ? allReviews.reduce((sum, r) => sum + r.rating, 0) / count : 0;
+
+        await dbManager.updateBookByIdAcrossAll(bookId, { 
+            averageRating: Number(averageRating.toFixed(1)), 
+            ratingCount: count 
+        });
+
+        res.json({ success: true, averageRating: Number(averageRating.toFixed(1)), ratingCount: count });
+    } catch (err) {
+        console.error('Failed to delete rating:', err);
+        res.status(500).json({ error: 'Failed to delete rating' });
+    }
+});
+
 app.get('/api/books/user/:uploaderId', async (req, res) => {
     try {
         const books = await dbManager.findBooksAcrossAll({ uploaderId: req.params.uploaderId }, { uploadDate: -1 });
