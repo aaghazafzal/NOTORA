@@ -199,7 +199,7 @@ function LibraryPage() {
 
       <div className="flex flex-col md:flex-row gap-8 lg:gap-12">
         {/* Sidebar */}
-        <aside className="w-full md:w-64 lg:w-72 shrink-0 flex flex-col gap-6">
+        <aside className="w-full md:w-64 lg:w-72 shrink-0 flex flex-col gap-6 md:sticky md:top-24 md:h-[calc(100vh-150px)]">
           <div className="flex items-center justify-between px-2">
             <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
               Your Shelves
@@ -266,7 +266,7 @@ function LibraryPage() {
           </div>
 
           {/* Shelves Navigation */}
-          <nav className="flex md:flex-col gap-2 overflow-x-auto md:overflow-visible pb-4 md:pb-0 scrollbar-hide -mx-4 px-4 md:mx-0 md:px-0">
+          <nav className="flex md:flex-col gap-2 overflow-x-auto md:overflow-x-visible md:overflow-y-auto md:max-h-[calc(100vh-250px)] pb-2 md:pb-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden -mx-4 px-4 md:mx-0 md:px-0">
             {allShelves.map((s) => {
               const isActive = activeShelf === s.id;
               const count = getBooksForShelf(s.id).length;
