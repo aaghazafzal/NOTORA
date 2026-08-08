@@ -6,7 +6,7 @@ import { Switch } from "@/components/ui/switch";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { Check, Loader2, LogIn, User, Palette, Bell, Shield } from "lucide-react";
+import { Check, Loader2, LogIn, User, Palette, Bell } from "lucide-react";
 import { toast } from "sonner";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { onAuthStateChanged, updateProfile } from "firebase/auth";
@@ -28,7 +28,6 @@ const SECTIONS = [
   { id: "account", label: "Account", icon: User },
   { id: "appearance", label: "Appearance", icon: Palette },
   { id: "notifications", label: "Notifications", icon: Bell },
-  { id: "security", label: "Security", icon: Shield },
 ];
 
 function SettingsPage() {
@@ -38,7 +37,6 @@ function SettingsPage() {
 
   const [user, setUser] = useState<any>(auth.currentUser);
   const [authResolved, setAuthResolved] = useState(false);
-  const [activeSection, setActiveSection] = useState("account");
 
   const [name, setName] = useState("");
   const [language, setLanguage] = useState("English");
@@ -47,10 +45,6 @@ function SettingsPage() {
     newFollowers: true,
     replies: true,
     weeklyDigest: false,
-  });
-  const [security, setSecurity] = useState({
-    twoFactor: false,
-    sessionSync: true,
   });
 
   useEffect(() => {
@@ -87,10 +81,6 @@ function SettingsPage() {
           replies: profile.settings.notifications?.replies ?? true,
           weeklyDigest: profile.settings.notifications?.weeklyDigest ?? false,
         });
-        setSecurity({
-          twoFactor: profile.settings.security?.twoFactor ?? false,
-          sessionSync: profile.settings.security?.sessionSync ?? true,
-        });
       }
     }
   }, [profile, user]);
@@ -125,7 +115,6 @@ function SettingsPage() {
       settings: {
         language,
         notifications,
-        security,
       },
     };
     if (name !== user?.displayName) {
@@ -142,20 +131,6 @@ function SettingsPage() {
       settings: {
         language,
         notifications: newNotifs,
-        security,
-      },
-    });
-  };
-
-  const updateSecurity = (key: keyof typeof security, val: boolean) => {
-    const newSecurity = { ...security, [key]: val };
-    setSecurity(newSecurity);
-    mutate({
-      name,
-      settings: {
-        language,
-        notifications,
-        security: newSecurity,
       },
     });
   };
@@ -227,35 +202,8 @@ function SettingsPage() {
         </div>
       </header>
 
-      <div className="flex flex-col md:flex-row gap-8 lg:gap-12">
-        <aside className="w-full md:w-64 lg:w-72 shrink-0 flex flex-col gap-6 md:sticky md:top-24 md:h-[calc(100vh-150px)]">
-          <nav className="flex md:flex-col gap-2 overflow-x-auto md:overflow-x-visible md:overflow-y-auto md:max-h-[calc(100vh-250px)] pb-2 md:pb-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden -mx-4 px-4 md:mx-0 md:px-0">
-            {SECTIONS.map((s) => {
-              const isActive = activeSection === s.id;
-              return (
-                <button
-                  key={s.id}
-                  onClick={() => setActiveSection(s.id)}
-                  className={cn(
-                    "flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-medium transition-all duration-300 relative whitespace-nowrap shrink-0 md:shrink md:w-full border",
-                    isActive
-                      ? "bg-primary/10 text-primary border-primary/20 shadow-[0_0_20px_-5px_rgba(var(--primary),0.2)]"
-                      : "bg-transparent text-muted-foreground border-transparent hover:bg-white/5 hover:text-foreground"
-                  )}
-                >
-                  <s.icon className={cn("h-5 w-5", isActive ? "text-primary drop-shadow-[0_0_8px_rgba(var(--primary),0.5)]" : "")} />
-                  <span className="flex-1 text-left">{s.label}</span>
-                  {isActive && (
-                    <div className="absolute inset-0 rounded-2xl ring-1 ring-inset ring-primary/20 pointer-events-none" />
-                  )}
-                </button>
-              );
-            })}
-          </nav>
-        </aside>
-
-        <main className="flex-1 min-w-0 max-w-3xl">
-          {activeSection === "account" && (
+      <div className="flex justify-center">
+        <main className="w-full max-w-4xl flex flex-col gap-12">
             <section className="animate-in fade-in slide-in-from-bottom-4 duration-500">
               <h2 className="mb-6 font-display text-2xl font-bold tracking-tight">Account</h2>
               <div className="space-y-6 rounded-3xl border border-white/10 bg-white/5 p-6 sm:p-8 backdrop-blur-xl">
@@ -307,9 +255,6 @@ function SettingsPage() {
                 </div>
               </div>
             </section>
-          )}
-
-          {activeSection === "appearance" && (
             <section className="animate-in fade-in slide-in-from-bottom-4 duration-500">
               <h2 className="mb-2 font-display text-2xl font-bold tracking-tight">Appearance</h2>
               <p className="mb-6 text-sm text-muted-foreground">
@@ -341,9 +286,6 @@ function SettingsPage() {
                 ))}
               </div>
             </section>
-          )}
-
-          {activeSection === "notifications" && (
             <section className="animate-in fade-in slide-in-from-bottom-4 duration-500">
               <h2 className="mb-6 font-display text-2xl font-bold tracking-tight">Notifications</h2>
               <div className="divide-y divide-white/10 rounded-3xl border border-white/10 bg-white/5 backdrop-blur-xl overflow-hidden">
@@ -366,35 +308,6 @@ function SettingsPage() {
                 ))}
               </div>
             </section>
-          )}
-
-          {activeSection === "security" && (
-            <section className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-              <h2 className="mb-6 font-display text-2xl font-bold tracking-tight">Security</h2>
-              <div className="divide-y divide-white/10 rounded-3xl border border-white/10 bg-white/5 backdrop-blur-xl overflow-hidden">
-                <div className="flex items-center justify-between p-6">
-                  <div className="space-y-1 pr-4">
-                    <div className="font-medium text-foreground">Two-factor authentication</div>
-                    <div className="text-sm text-muted-foreground">Extra step at sign-in to protect your account.</div>
-                  </div>
-                  <Switch 
-                    checked={security.twoFactor}
-                    onCheckedChange={(val) => updateSecurity("twoFactor", val)}
-                  />
-                </div>
-                <div className="flex items-center justify-between p-6">
-                  <div className="space-y-1 pr-4">
-                    <div className="font-medium text-foreground">Session sync across devices</div>
-                    <div className="text-sm text-muted-foreground">Continue reading anywhere seamlessly.</div>
-                  </div>
-                  <Switch 
-                    checked={security.sessionSync}
-                    onCheckedChange={(val) => updateSecurity("sessionSync", val)}
-                  />
-                </div>
-              </div>
-            </section>
-          )}
         </main>
       </div>
     </div>
