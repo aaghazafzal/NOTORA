@@ -246,9 +246,6 @@ function SettingsPage() {
                   >
                     <option value="English">English</option>
                     <option value="Hindi">Hindi</option>
-                    <option value="Spanish">Spanish</option>
-                    <option value="French">French</option>
-                    <option value="Japanese">Japanese</option>
                   </select>
                 </div>
                 <div className="pt-2">
