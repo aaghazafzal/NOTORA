@@ -676,6 +676,52 @@ app.get('/api/users/:uid', async (req, res) => {
     }
 });
 
+app.get('/api/users/:uid/reviews', async (req, res) => {
+    try {
+        const userId = req.params.uid;
+        const Review = dbManager.getReviewModel();
+        
+        // Fetch all reviews by this user
+        const userReviews = await Review.find({ userId }).sort({ createdAt: -1 }).lean();
+        
+        if (userReviews.length === 0) {
+            return res.json([]);
+        }
+        
+        // Extract unique bookIds
+        const bookIds = [...new Set(userReviews.map(r => r.bookId))];
+        
+        // Fetch book details across all databases
+        const books = await dbManager.findBooksAcrossAll({ _id: { $in: bookIds } });
+        
+        // Create a map for quick book lookup
+        const bookMap = {};
+        books.forEach(b => {
+            bookMap[b._id.toString()] = b;
+        });
+        
+        // Merge book details into reviews
+        const populatedReviews = userReviews.map(r => {
+            const book = bookMap[r.bookId];
+            return {
+                ...r,
+                book: book ? {
+                    id: book._id,
+                    slug: book.slug || book._id,
+                    title: book.title,
+                    author: book.author,
+                    coverUrl: book.coverUrl,
+                } : null
+            };
+        });
+        
+        res.json(populatedReviews);
+    } catch (err) {
+        console.error('Failed to fetch user reviews:', err);
+        res.status(500).json({ error: 'Failed to fetch user reviews' });
+    }
+});
+
 app.put('/api/users/profile', verifyToken, upload.single('photo'), async (req, res) => {
     try {
         const uid = req.user.uid;

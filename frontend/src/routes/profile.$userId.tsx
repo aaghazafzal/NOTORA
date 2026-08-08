@@ -15,7 +15,8 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { UserPlus, Loader2, BookOpen, Clock, Edit3, Settings, Camera } from "lucide-react";
+import { UserPlus, Loader2, BookOpen, Clock, Edit3, Settings, Camera, Star } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { useState, useEffect } from "react";
 import { useAuthStore } from "@/store/useAuthStore";
 import { toast } from "sonner";
@@ -35,6 +36,7 @@ function ProfilePage() {
   const { userId } = Route.useParams();
   const navigate = useNavigate();
   const { user: currentUser, loading: isAuthLoading } = useAuthStore();
+  const { t } = useTranslation();
   const [following, setFollowing] = useState(false);
 
   // Edit State
@@ -104,6 +106,20 @@ function ProfilePage() {
         ratingCount: b.ratingCount || Math.floor(Math.random() * 500) + 50,
         language: b.language || "English",
       }));
+    },
+    enabled: !!profileId,
+  });
+
+  // Fetch real user reviews
+  const { data: userReviews = [], isLoading: isReviewsLoading } = useQuery({
+    queryKey: ["user-reviews", profileId],
+    queryFn: async () => {
+      if (!profileId) return [];
+      const res = await fetch(
+        `${import.meta.env.VITE_API_URL || "http://localhost:9090"}/api/users/${profileId}/reviews`
+      );
+      if (!res.ok) throw new Error("Failed to fetch user reviews");
+      return res.json();
     },
     enabled: !!profileId,
   });
@@ -205,7 +221,7 @@ function ProfilePage() {
   const displayName = dbUser?.name || (isMe ? currentUser?.displayName : "Lumen Reader");
   const displayBio =
     dbUser?.bio ||
-    "Avid reader, curator of fine literature, and active contributor to the Notora community. Always looking for the next great story.";
+    t("Avid reader, curator of fine literature, and active contributor to the Notora community. Always looking for the next great story.");
   const displayFollowers = dbUser?.followers || 142;
   const displayFollowing = dbUser?.following || 89;
 
@@ -371,21 +387,15 @@ function ProfilePage() {
           <TabsList className="w-full justify-start rounded-none border-b bg-transparent h-auto p-0 mb-8 overflow-x-auto flex-nowrap hide-scrollbar">
             <TabsTrigger
               value="uploads"
-              className="rounded-none border-b-2 border-transparent px-6 py-4 font-medium data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:text-foreground text-muted-foreground"
+              className="rounded-none border-b-2 border-transparent px-6 py-4 font-medium data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:text-foreground text-muted-foreground whitespace-nowrap"
             >
-              Uploads ({uploadedBooks.length})
-            </TabsTrigger>
-            <TabsTrigger
-              value="reading"
-              className="rounded-none border-b-2 border-transparent px-6 py-4 font-medium data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:text-foreground text-muted-foreground"
-            >
-              Reading List
+              {t("Uploads")} ({uploadedBooks.length})
             </TabsTrigger>
             <TabsTrigger
               value="reviews"
-              className="rounded-none border-b-2 border-transparent px-6 py-4 font-medium data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:text-foreground text-muted-foreground"
+              className="rounded-none border-b-2 border-transparent px-6 py-4 font-medium data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:text-foreground text-muted-foreground whitespace-nowrap"
             >
-              Reviews
+              {t("Reviews")} ({userReviews.length})
             </TabsTrigger>
           </TabsList>
 
@@ -424,40 +434,69 @@ function ProfilePage() {
             )}
           </TabsContent>
 
-          {/* READING LIST TAB (MOCKED) */}
-          <TabsContent
-            value="reading"
-            className="outline-none animate-in fade-in slide-in-from-bottom-2 duration-500"
-          >
-            <div className="flex flex-col items-center justify-center p-12 text-center bg-card/50 border border-border rounded-3xl">
-              <div className="w-16 h-16 bg-secondary/20 rounded-full flex items-center justify-center mb-4">
-                <Clock className="w-8 h-8 text-secondary-foreground/60" />
-              </div>
-              <h3 className="font-display text-xl font-bold mb-2">Reading List is empty</h3>
-              <p className="text-muted-foreground mb-6 max-w-sm">
-                Books you save for later will appear here.
-              </p>
-              <Button asChild variant="outline" className="rounded-full">
-                <Link to="/browse">Explore Library</Link>
-              </Button>
-            </div>
-          </TabsContent>
-
-          {/* REVIEWS TAB (MOCKED) */}
+          {/* REVIEWS TAB */}
           <TabsContent
             value="reviews"
             className="outline-none animate-in fade-in slide-in-from-bottom-2 duration-500"
           >
-            <div className="flex flex-col items-center justify-center p-12 text-center bg-card/50 border border-border rounded-3xl">
-              <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mb-4">
-                <Edit3 className="w-8 h-8 text-primary" />
+            {isReviewsLoading ? (
+              <div className="flex justify-center items-center h-48">
+                <Loader2 className="animate-spin text-primary w-8 h-8" />
               </div>
-              <h3 className="font-display text-xl font-bold mb-2">No reviews yet</h3>
-              <p className="text-muted-foreground mb-6 max-w-sm">
-                Share your thoughts on the books you've read. Your reviews help others find their
-                next great read.
-              </p>
-            </div>
+            ) : userReviews.length === 0 ? (
+              <div className="flex flex-col items-center justify-center p-12 text-center bg-card/50 border border-border rounded-3xl">
+                <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mb-4">
+                  <Edit3 className="w-8 h-8 text-primary" />
+                </div>
+                <h3 className="font-display text-xl font-bold mb-2">{t("No reviews yet")}</h3>
+                <p className="text-muted-foreground mb-6 max-w-sm">
+                  {t("Share your thoughts on the books you've read. Your reviews help others find their next great read.")}
+                </p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {userReviews.map((review: any) => (
+                  <Link 
+                    key={review._id} 
+                    to={`/book/${review.book?.slug || review.bookId}`}
+                    className="flex gap-4 p-5 rounded-2xl bg-card border border-border/50 hover:border-primary/50 transition-colors group"
+                  >
+                    {review.book?.coverUrl ? (
+                      <div className="shrink-0 w-20 h-28 md:w-24 md:h-32 rounded-lg overflow-hidden shadow-md">
+                        <img 
+                          src={review.book.coverUrl} 
+                          alt={review.book.title}
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                        />
+                      </div>
+                    ) : (
+                      <div className="shrink-0 w-20 h-28 md:w-24 md:h-32 rounded-lg bg-muted flex items-center justify-center">
+                        <BookOpen className="w-8 h-8 text-muted-foreground/50" />
+                      </div>
+                    )}
+                    <div className="flex-1 min-w-0">
+                      <h4 className="font-bold text-lg truncate group-hover:text-primary transition-colors">
+                        {review.book?.title || t("Unknown Book")}
+                      </h4>
+                      <p className="text-sm text-muted-foreground truncate mb-2">
+                        {review.book?.author || t("Unknown Author")}
+                      </p>
+                      <div className="flex items-center gap-1 mb-2">
+                        {Array.from({ length: 5 }).map((_, i) => (
+                          <Star 
+                            key={i} 
+                            className={`w-4 h-4 ${i < review.rating ? "fill-primary text-primary" : "text-muted-foreground/30"}`} 
+                          />
+                        ))}
+                      </div>
+                      <p className="text-sm line-clamp-3 text-foreground/80">
+                        {review.text}
+                      </p>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            )}
           </TabsContent>
         </Tabs>
       </div>
