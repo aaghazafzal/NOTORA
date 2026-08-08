@@ -10,6 +10,7 @@ import { auth, googleProvider, getFirebaseErrorMessage } from "@/lib/firebase";
 import {
   createUserWithEmailAndPassword,
   signInWithPopup,
+  signInWithRedirect,
   updateProfile,
   User,
 } from "firebase/auth";
@@ -103,9 +104,13 @@ function SignUpPage() {
 
       setStep(2); // Go to onboarding
     } catch (error: any) {
-      toast.error(getFirebaseErrorMessage(error));
-    } finally {
-      setIsGoogleLoading(false);
+      if (error.code !== 'auth/popup-closed-by-user') {
+        // Fallback for Brave/strict browsers
+        await signInWithRedirect(auth, googleProvider);
+      } else {
+        toast.error(getFirebaseErrorMessage(error));
+        setIsGoogleLoading(false);
+      }
     }
   };
 

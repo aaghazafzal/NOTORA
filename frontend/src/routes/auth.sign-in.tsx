@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useState } from "react";
 import { auth, googleProvider, getFirebaseErrorMessage } from "@/lib/firebase";
-import { signInWithEmailAndPassword, signInWithPopup } from "firebase/auth";
+import { signInWithEmailAndPassword, signInWithPopup, signInWithRedirect } from "firebase/auth";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/auth/sign-in")({
@@ -68,9 +68,13 @@ function SignInPage() {
       toast.success("Welcome back!");
       navigate({ to: "/" });
     } catch (error: any) {
-      toast.error(getFirebaseErrorMessage(error));
-    } finally {
-      setIsGoogleLoading(false);
+      if (error.code !== 'auth/popup-closed-by-user') {
+        // Fallback for Brave/strict browsers
+        await signInWithRedirect(auth, googleProvider);
+      } else {
+        toast.error(getFirebaseErrorMessage(error));
+        setIsGoogleLoading(false);
+      }
     }
   };
 

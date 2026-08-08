@@ -20,6 +20,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { coverStyle } from "@/lib/cover";
 import { useAppStore } from "@/lib/store";
+import { useAuthStore } from "@/store/useAuthStore";
 import { toast } from "sonner";
 import { Textarea } from "@/components/ui/textarea";
 
@@ -226,7 +227,7 @@ function SimilarBooksRow({ books }: { books: Book[] }) {
 
 function BookPage() {
   const { book } = Route.useLoaderData();
-  const user = useAppStore((s) => s.user);
+  const { user } = useAuthStore();
   const queryClient = useQueryClient();
 
   const { data: similarBooks = [] } = useQuery({
