@@ -240,7 +240,7 @@ function BrowsePage() {
                     htmlFor={`l-${l}`}
                     className="text-sm cursor-pointer hover:text-primary transition-colors flex-1"
                   >
-                    {l}
+                    {t(l)}
                   </label>
                 </li>
               ))}
@@ -285,17 +285,17 @@ function BrowsePage() {
 
           <FilterPopover title={t("Tags")} activeCount={tags.length}>
             <div className="flex flex-wrap gap-1.5 max-h-60 overflow-y-auto custom-scrollbar pr-2">
-              {ALL_TAGS.map((t) => (
+              {ALL_TAGS.map((tag) => (
                 <button
-                  key={t}
-                  onClick={() => setTags((s) => toggle(s, t))}
+                  key={tag}
+                  onClick={() => setTags((s) => toggle(s, tag))}
                   className={`rounded-full border px-3 py-1 text-xs transition-colors ${
-                    tags.includes(t)
+                    tags.includes(tag)
                       ? "border-primary bg-primary text-primary-foreground"
                       : "border-border hover:bg-accent"
                   }`}
                 >
-                  {t}
+                  {t(tag)}
                 </button>
               ))}
             </div>

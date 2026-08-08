@@ -29,8 +29,10 @@ import { NOTIFICATIONS } from "@/data/notifications";
 import { useAuthStore } from "@/store/useAuthStore";
 import { auth } from "@/lib/firebase";
 import { signOut } from "firebase/auth";
+import { useTranslation } from "react-i18next";
 
 export function TopBar() {
+  const { t } = useTranslation();
   const [q, setQ] = useState("");
   const [showSignOutDialog, setShowSignOutDialog] = useState(false);
   const navigate = useNavigate();
@@ -68,7 +70,7 @@ export function TopBar() {
           <Input
             value={q}
             onChange={(e) => setQ(e.target.value)}
-            placeholder="Search books, authors, tags"
+            placeholder={t("Search books, authors, tags…")}
             className="pl-9"
             aria-label="Search"
           />
