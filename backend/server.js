@@ -663,7 +663,7 @@ app.get('/api/users/:uid', async (req, res) => {
 app.put('/api/users/profile', verifyToken, upload.single('photo'), async (req, res) => {
     try {
         const uid = req.user.uid;
-        const { name, bio } = req.body;
+        const { name, bio, settings } = req.body;
         
         const User = dbManager.getUserModel();
         let user = await User.findOne({ uid });
@@ -673,6 +673,33 @@ app.put('/api/users/profile', verifyToken, upload.single('photo'), async (req, r
 
         if (name) user.name = name;
         if (bio !== undefined) user.bio = bio;
+        
+        let parsedSettings = settings;
+        if (typeof settings === 'string') {
+            try {
+                parsedSettings = JSON.parse(settings);
+            } catch (e) {
+                console.error("Failed to parse settings JSON:", e);
+            }
+        }
+        
+        if (parsedSettings) {
+            if (!user.settings) user.settings = {};
+            if (parsedSettings.language) user.settings.language = parsedSettings.language;
+            
+            if (parsedSettings.notifications) {
+                user.settings.notifications = {
+                    ...user.settings.notifications,
+                    ...parsedSettings.notifications
+                };
+            }
+            if (parsedSettings.security) {
+                user.settings.security = {
+                    ...user.settings.security,
+                    ...parsedSettings.security
+                };
+            }
+        }
 
         if (req.body.removePhoto === 'true') {
             if (user.photoUrl && user.photoUrl.includes('r2.dev/avatars/')) {
