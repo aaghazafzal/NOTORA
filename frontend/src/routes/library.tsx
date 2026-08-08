@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { createFileRoute } from "@tanstack/react-router";
-import { Plus, BookMarked, Heart, CheckCircle2, Clock, Loader2, LogIn, Bookmark, Library } from "lucide-react";
+import { Plus, BookMarked, Heart, CheckCircle2, Clock, Loader2, LogIn, Bookmark, Library, MoreHorizontal, Edit, Trash2, X, CheckSquare } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { onAuthStateChanged } from "firebase/auth";
 import { auth } from "@/lib/firebase";
@@ -15,6 +15,12 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
 import { useTranslation } from "react-i18next";
 
@@ -38,7 +44,17 @@ const SHELVES = [
   { id: "to-read", labelKey: "To Read", icon: Clock },
 ];
 
-function ShelfGrid({ books }: { books: any[] }) {
+function ShelfGrid({ 
+  books, 
+  selectionMode, 
+  selectedBooks, 
+  toggleSelection 
+}: { 
+  books: any[], 
+  selectionMode?: boolean,
+  selectedBooks?: string[],
+  toggleSelection?: (id: string) => void 
+}) {
   const { t } = useTranslation();
   if (!books || books.length === 0) {
     return (
@@ -63,23 +79,46 @@ function ShelfGrid({ books }: { books: any[] }) {
   return (
     <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 mt-6">
       {books.map((b) => (
-        <div key={b._id} className="flex justify-center">
-          <BookCard
-            book={{
-              id: b._id,
-              slug: b.slug || b._id,
-              title: b.title,
-              authorName: b.author,
-              coverUrl: b.coverUrl,
-              genre: b.genre || "Other",
-              tags: b.tags || [],
-              rating: 4.8,
-              ratingCount: 152,
-              language: b.language || "English",
-              pages: b.pages || 0,
-              publishedYear: b.publishedYear || null,
-            }}
-          />
+        <div 
+          key={b._id} 
+          className={cn("flex justify-center relative", selectionMode ? "cursor-pointer group" : "")}
+          onClick={() => {
+            if (selectionMode && toggleSelection) {
+              toggleSelection(b._id);
+            }
+          }}
+        >
+          <div className={cn("transition-all duration-200 w-full", selectionMode && selectedBooks?.includes(b._id) && "scale-95 opacity-80")}>
+            <BookCard
+              book={{
+                id: b._id,
+                slug: b.slug || b._id,
+                title: b.title,
+                authorName: b.author,
+                coverUrl: b.coverUrl,
+                genre: b.genre || "Other",
+                tags: b.tags || [],
+                rating: 4.8,
+                ratingCount: 152,
+                language: b.language || "English",
+                pages: b.pages || 0,
+                publishedYear: b.publishedYear || null,
+              }}
+            />
+          </div>
+          {selectionMode && (
+            <div className="absolute inset-0 z-10 flex items-start justify-end p-3 pointer-events-none">
+              <div className={cn(
+                "h-6 w-6 rounded-full border-2 flex items-center justify-center transition-all",
+                selectedBooks?.includes(b._id)
+                  ? "bg-primary border-primary text-primary-foreground scale-110 shadow-[0_0_15px_rgba(var(--primary),0.5)]"
+                  : "bg-black/50 border-white/50 text-transparent backdrop-blur-md group-hover:border-white group-hover:bg-black/70"
+              )}>
+                <CheckSquare className="h-3.5 w-3.5" />
+              </div>
+            </div>
+          )}
+          {selectionMode && <div className="absolute inset-0 z-[5]" />}
         </div>
       ))}
     </div>
@@ -94,6 +133,15 @@ function LibraryPage() {
   const [newShelf, setNewShelf] = useState("");
   const [open, setOpen] = useState(false);
   const [activeShelf, setActiveShelf] = useState("reading");
+  
+  // Shelf Management State
+  const [editShelfName, setEditShelfName] = useState("");
+  const [shelfToEdit, setShelfToEdit] = useState<string | null>(null);
+  const [shelfToDelete, setShelfToDelete] = useState<string | null>(null);
+  
+  // Multi-Select State
+  const [selectionMode, setSelectionMode] = useState(false);
+  const [selectedBooks, setSelectedBooks] = useState<string[]>([]);
 
   useEffect(() => {
     return onAuthStateChanged(auth, (u) => {
@@ -116,6 +164,38 @@ function LibraryPage() {
       return res.json();
     },
     enabled: !!user,
+  });
+
+  const { mutate: updateShelf, isPending: isUpdatingShelf } = useMutation({
+    mutationFn: async ({ action, targetShelf, newName, bookIds }: any) => {
+      const token = await user!.getIdToken();
+      const res = await fetch(
+        `${import.meta.env.VITE_API_URL || "http://localhost:9090"}/api/library/shelves`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            action,
+            targetShelf,
+            newName,
+            bookIds,
+            custom: !SHELVES.some((s) => s.id === targetShelf),
+          }),
+        },
+      );
+      if (!res.ok) throw new Error("Failed to update shelf");
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["library"] });
+      setShelfToEdit(null);
+      setShelfToDelete(null);
+      setSelectionMode(false);
+      setSelectedBooks([]);
+    },
   });
 
   if (!authResolved || isLoading) {
@@ -274,32 +354,67 @@ function LibraryPage() {
               const count = getBooksForShelf(s.id).length;
 
               return (
-                <button
-                  key={s.id}
-                  onClick={() => setActiveShelf(s.id)}
-                  className={cn(
-                    "flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-medium transition-all duration-300 relative whitespace-nowrap shrink-0 md:shrink md:w-full border",
-                    isActive
-                      ? "bg-primary/10 text-primary border-primary/20 shadow-[0_0_20px_-5px_rgba(var(--primary),0.2)]"
-                      : "bg-transparent text-muted-foreground border-transparent hover:bg-white/5 hover:text-foreground"
-                  )}
-                >
-                  <s.icon className={cn("h-5 w-5", isActive ? "text-primary drop-shadow-[0_0_8px_rgba(var(--primary),0.5)]" : "")} />
-                  <span className="flex-1 text-left">{s.label}</span>
-                  <span
+                <div key={s.id} className="relative group flex items-center shrink-0 md:shrink md:w-full">
+                  <button
+                    onClick={() => {
+                      setActiveShelf(s.id);
+                      setSelectionMode(false);
+                      setSelectedBooks([]);
+                    }}
                     className={cn(
-                      "text-xs font-bold px-2 py-0.5 rounded-full transition-colors ml-3",
+                      "flex flex-1 items-center gap-3 px-4 py-3 rounded-2xl text-sm font-medium transition-all duration-300 relative whitespace-nowrap border",
                       isActive
-                        ? "bg-primary/20 text-primary"
-                        : "bg-white/10 text-muted-foreground"
+                        ? "bg-primary/10 text-primary border-primary/20 shadow-[0_0_20px_-5px_rgba(var(--primary),0.2)]"
+                        : "bg-transparent text-muted-foreground border-transparent hover:bg-white/5 hover:text-foreground"
                     )}
                   >
-                    {count}
-                  </span>
-                  {isActive && (
-                    <div className="absolute inset-0 rounded-2xl ring-1 ring-inset ring-primary/20 pointer-events-none" />
+                    <s.icon className={cn("h-5 w-5", isActive ? "text-primary drop-shadow-[0_0_8px_rgba(var(--primary),0.5)]" : "")} />
+                    <span className="flex-1 text-left">{t(s.labelKey || s.label)}</span>
+                    <span
+                      className={cn(
+                        "text-xs font-bold px-2 py-0.5 rounded-full transition-colors ml-3",
+                        isActive
+                          ? "bg-primary/20 text-primary"
+                          : "bg-white/10 text-muted-foreground"
+                      )}
+                    >
+                      {count}
+                    </span>
+                    {isActive && (
+                      <div className="absolute inset-0 rounded-2xl ring-1 ring-inset ring-primary/20 pointer-events-none" />
+                    )}
+                  </button>
+                  {s.isCustom && (
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          className="absolute right-2 opacity-0 group-hover:opacity-100 transition-opacity h-8 w-8 rounded-full hover:bg-white/10 focus-visible:opacity-100 hidden md:flex"
+                        >
+                          <MoreHorizontal className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end" className="w-40 rounded-xl bg-zinc-950/95 backdrop-blur-xl border-white/10 p-1">
+                        <DropdownMenuItem 
+                          onClick={() => {
+                            setShelfToEdit(s.id);
+                            setEditShelfName(s.id);
+                          }}
+                          className="gap-2 cursor-pointer rounded-lg hover:bg-white/10"
+                        >
+                          <Edit className="h-4 w-4" /> {t("Rename")}
+                        </DropdownMenuItem>
+                        <DropdownMenuItem 
+                          onClick={() => setShelfToDelete(s.id)}
+                          className="gap-2 text-red-500 hover:text-red-500 hover:bg-red-500/20 focus:text-red-500 focus:bg-red-500/20 cursor-pointer rounded-lg"
+                        >
+                          <Trash2 className="h-4 w-4" /> {t("Delete")}
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   )}
-                </button>
+                </div>
               );
             })}
           </nav>
@@ -345,19 +460,151 @@ function LibraryPage() {
           )}
 
           <section>
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="font-display text-2xl font-bold tracking-tight capitalize">
-                {activeShelfLabel}
-              </h2>
-              <span className="text-sm font-medium text-muted-foreground bg-white/5 px-3 py-1 rounded-full border border-white/10">
-                {activeBooks.length} {activeBooks.length === 1 ? "book" : "books"}
-              </span>
+            <div className="flex items-center justify-between mb-6 flex-wrap gap-4">
+              <div className="flex items-center gap-3">
+                <h2 className="font-display text-2xl font-bold tracking-tight capitalize">
+                  {t(allShelves.find(s => s.id === activeShelf)?.labelKey || activeShelfLabel)}
+                </h2>
+                <span className="text-sm font-medium text-muted-foreground bg-white/5 px-3 py-1 rounded-full border border-white/10">
+                  {activeBooks.length} {activeBooks.length === 1 ? t("book") : t("books")}
+                </span>
+              </div>
+              
+              {activeBooks.length > 0 && (
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setSelectionMode(!selectionMode);
+                    if (selectionMode) setSelectedBooks([]);
+                  }}
+                  className={cn(
+                    "rounded-full transition-all px-6",
+                    selectionMode 
+                      ? "bg-primary/20 border-primary/40 text-primary hover:bg-primary/30" 
+                      : "bg-white/5 border-white/10 hover:bg-white/10"
+                  )}
+                >
+                  {selectionMode ? t("Cancel Selection") : t("Select Books")}
+                </Button>
+              )}
             </div>
             
-            <ShelfGrid books={activeBooks} />
+            <ShelfGrid 
+              books={activeBooks} 
+              selectionMode={selectionMode}
+              selectedBooks={selectedBooks}
+              toggleSelection={(id) => {
+                setSelectedBooks(prev => 
+                  prev.includes(id) ? prev.filter(bId => bId !== id) : [...prev, id]
+                );
+              }}
+            />
           </section>
         </main>
       </div>
+
+      {/* Floating Action Bar for Multi-select */}
+      <div 
+        className={cn(
+          "fixed bottom-6 left-1/2 -translate-x-1/2 z-50 transition-all duration-300 ease-out flex items-center gap-4 bg-zinc-900/90 backdrop-blur-xl border border-white/10 p-3 pr-4 rounded-full shadow-2xl",
+          selectionMode ? "translate-y-0 opacity-100 scale-100" : "translate-y-20 opacity-0 scale-95 pointer-events-none"
+        )}
+      >
+        <div className="flex items-center gap-3 pl-2 pr-4 border-r border-white/10">
+          <div className="h-8 w-8 rounded-full bg-primary flex items-center justify-center text-primary-foreground font-bold shadow-[0_0_15px_rgba(var(--primary),0.5)]">
+            {selectedBooks.length}
+          </div>
+          <span className="text-sm font-medium">{t("Selected")}</span>
+        </div>
+        <Button
+          variant="destructive"
+          className="rounded-full shadow-lg h-9 px-6 transition-all"
+          disabled={selectedBooks.length === 0 || isUpdatingShelf}
+          onClick={() => {
+            updateShelf({ action: 'remove_multiple', targetShelf: activeShelf, bookIds: selectedBooks });
+          }}
+        >
+          {isUpdatingShelf ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Trash2 className="h-4 w-4 mr-2" />}
+          {t("Remove from Shelf")}
+        </Button>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="rounded-full h-9 w-9 text-muted-foreground hover:text-foreground"
+          onClick={() => {
+            setSelectionMode(false);
+            setSelectedBooks([]);
+          }}
+        >
+          <X className="h-5 w-5" />
+        </Button>
+      </div>
+
+      {/* Rename Shelf Dialog */}
+      <Dialog open={!!shelfToEdit} onOpenChange={(val) => !val && setShelfToEdit(null)}>
+        <DialogContent className="rounded-3xl border-white/10 bg-zinc-950/95 backdrop-blur-xl">
+          <DialogHeader>
+            <DialogTitle className="text-2xl font-display">{t("Rename Shelf")}</DialogTitle>
+          </DialogHeader>
+          <div className="py-4">
+            <Input
+              autoFocus
+              value={editShelfName}
+              onChange={(e) => setEditShelfName(e.target.value)}
+              placeholder={t("Shelf name")}
+              maxLength={40}
+              className="h-12 text-lg rounded-xl border-white/10 bg-black/40 focus-visible:ring-primary/50"
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" className="rounded-full hover:bg-white/5" onClick={() => setShelfToEdit(null)}>
+              {t("Cancel")}
+            </Button>
+            <Button
+              className="rounded-full shadow-lg shadow-primary/20"
+              disabled={isUpdatingShelf || !editShelfName.trim() || editShelfName === shelfToEdit}
+              onClick={() => {
+                updateShelf({ action: 'rename', targetShelf: shelfToEdit, newName: editShelfName.trim() });
+              }}
+            >
+              {isUpdatingShelf ? <Loader2 className="h-4 w-4 animate-spin" /> : t("Save Changes")}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Shelf Dialog */}
+      <Dialog open={!!shelfToDelete} onOpenChange={(val) => !val && setShelfToDelete(null)}>
+        <DialogContent className="rounded-3xl border-white/10 bg-zinc-950/95 backdrop-blur-xl">
+          <DialogHeader>
+            <DialogTitle className="text-2xl font-display text-red-500">{t("Delete Shelf")}</DialogTitle>
+          </DialogHeader>
+          <div className="py-2">
+            <p className="text-muted-foreground">
+              {t("Are you sure you want to delete")} <span className="text-foreground font-semibold">"{shelfToDelete}"</span>?
+              {t(" The books in this shelf will not be deleted from your library.")}
+            </p>
+          </div>
+          <DialogFooter className="mt-4">
+            <Button variant="ghost" className="rounded-full hover:bg-white/5" onClick={() => setShelfToDelete(null)}>
+              {t("Cancel")}
+            </Button>
+            <Button
+              variant="destructive"
+              className="rounded-full shadow-lg"
+              disabled={isUpdatingShelf}
+              onClick={() => {
+                updateShelf({ action: 'delete_shelf', targetShelf: shelfToDelete });
+                if (activeShelf === shelfToDelete) {
+                  setActiveShelf("reading");
+                }
+              }}
+            >
+              {isUpdatingShelf ? <Loader2 className="h-4 w-4 animate-spin" /> : t("Delete Shelf")}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

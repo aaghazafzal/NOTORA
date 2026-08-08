@@ -581,7 +581,7 @@ app.get('/api/library', verifyToken, async (req, res) => {
 app.post('/api/library/shelves', verifyToken, async (req, res) => {
     try {
         const userId = req.user.uid;
-        const { bookId, targetShelf, custom = false, action = 'add' } = req.body;
+        const { bookId, bookIds, targetShelf, newName, custom = false, action = 'add' } = req.body;
         
         const Library = dbManager.getLibraryModel();
         let library = await Library.findOne({ userId });
@@ -594,10 +594,23 @@ app.post('/api/library/shelves', verifyToken, async (req, res) => {
                 if (!library.customShelves.has(targetShelf)) {
                     library.customShelves.set(targetShelf, []);
                 }
+            } else if (action === 'rename') {
+                if (library.customShelves.has(targetShelf) && newName) {
+                    const shelfBooks = library.customShelves.get(targetShelf);
+                    library.customShelves.delete(targetShelf);
+                    library.customShelves.set(newName, shelfBooks);
+                }
+            } else if (action === 'delete_shelf') {
+                if (library.customShelves.has(targetShelf)) {
+                    library.customShelves.delete(targetShelf);
+                }
             } else {
                 let shelf = library.customShelves.get(targetShelf) || [];
                 if (action === 'add' && bookId && !shelf.includes(bookId)) shelf.push(bookId);
                 if (action === 'remove' && bookId) shelf = shelf.filter(id => id.toString() !== bookId);
+                if (action === 'remove_multiple' && bookIds) {
+                    shelf = shelf.filter(id => !bookIds.includes(id.toString()));
+                }
                 library.customShelves.set(targetShelf, shelf);
             }
         } else {
@@ -608,8 +621,11 @@ app.post('/api/library/shelves', verifyToken, async (req, res) => {
                 // Optionally remove from mutually exclusive shelves (e.g. to-read vs completed)
                 shelf.push(bookId);
             }
-            if (action === 'remove') {
+            if (action === 'remove' && bookId) {
                 library.shelves[targetShelf] = shelf.filter(id => id.toString() !== bookId);
+            }
+            if (action === 'remove_multiple' && bookIds) {
+                library.shelves[targetShelf] = shelf.filter(id => !bookIds.includes(id.toString()));
             }
         }
         
