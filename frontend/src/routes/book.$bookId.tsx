@@ -22,7 +22,7 @@ import { coverStyle } from "@/lib/cover";
 import { useAppStore } from "@/lib/store";
 import { toast } from "sonner";
 import { Textarea } from "@/components/ui/textarea";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+
 import type { Book } from "@/data/books";
 
 function StarRating({ 
