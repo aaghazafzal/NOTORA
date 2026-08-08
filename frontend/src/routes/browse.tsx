@@ -11,6 +11,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { coverStyle } from "@/lib/cover";
+import { useTranslation } from "react-i18next";
 
 const searchSchema = z.object({
   q: z.string().optional(),
@@ -85,6 +86,7 @@ function FilterPopover({ title, activeCount, children }: any) {
 }
 
 function BrowsePage() {
+  const { t } = useTranslation();
   const { q } = Route.useSearch();
   const navigate = Route.useNavigate();
   const [query, setQuery] = useState(q ?? "");
@@ -218,14 +220,14 @@ function BrowsePage() {
           <Input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search titles, authors, tags…"
+            placeholder={t("Search titles, authors, tags…")}
             className="pl-14 h-14 text-lg rounded-full bg-background border-border shadow-sm focus-visible:ring-primary/50 transition-all w-full"
             aria-label="Search"
           />
         </form>
 
         <div className="flex items-center gap-2 flex-wrap pt-2">
-          <FilterPopover title="Language" activeCount={langs.length}>
+          <FilterPopover title={t("Language")} activeCount={langs.length}>
             <ul className="space-y-2">
               {ALL_LANGUAGES.map((l) => (
                 <li key={l} className="flex items-center gap-2">
@@ -245,7 +247,7 @@ function BrowsePage() {
             </ul>
           </FilterPopover>
 
-          <FilterPopover title="Genre" activeCount={genres.length}>
+          <FilterPopover title={t("Genre")} activeCount={genres.length}>
             <div className="flex flex-wrap gap-1.5 max-h-60 overflow-y-auto custom-scrollbar pr-2">
               {ALL_GENRES.map((g) => (
                 <button
@@ -257,13 +259,13 @@ function BrowsePage() {
                       : "border-border hover:bg-accent"
                   }`}
                 >
-                  {g}
+                  {t(g)}
                 </button>
               ))}
             </div>
           </FilterPopover>
 
-          <FilterPopover title="Rating" activeCount={minRating > 0 ? 1 : 0}>
+          <FilterPopover title={t("Rating")} activeCount={minRating > 0 ? 1 : 0}>
             <div className="flex flex-col gap-2">
               {[0, 3, 4, 4.5].map((r) => (
                 <button
@@ -275,13 +277,13 @@ function BrowsePage() {
                       : "border-border hover:bg-accent"
                   }`}
                 >
-                  {r === 0 ? "Any Rating" : `${r} Stars & Up`}
+                  {r === 0 ? t("Any Rating") : `${r} ${t("Stars & Up")}`}
                 </button>
               ))}
             </div>
           </FilterPopover>
 
-          <FilterPopover title="Tags" activeCount={tags.length}>
+          <FilterPopover title={t("Tags")} activeCount={tags.length}>
             <div className="flex flex-wrap gap-1.5 max-h-60 overflow-y-auto custom-scrollbar pr-2">
               {ALL_TAGS.map((t) => (
                 <button
@@ -306,7 +308,7 @@ function BrowsePage() {
               onClick={clearAll}
               className="text-muted-foreground hover:text-foreground h-9 sm:h-10 px-3 rounded-xl"
             >
-              Clear filters
+              {t("Clear filters")}
             </Button>
           )}
         </div>
@@ -320,7 +322,7 @@ function BrowsePage() {
             <section className="space-y-4">
               <div className="flex items-center gap-2">
                 <Trophy className="w-5 h-5 text-primary" />
-                <h2 className="text-xl font-bold font-display">Top Searched Books</h2>
+                <h2 className="text-xl font-bold font-display">{t("Top Searched Books")}</h2>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 {top3.map((book: any, i: number) => (
@@ -362,7 +364,7 @@ function BrowsePage() {
                       </h3>
                       <p className="text-xs text-muted-foreground truncate">{book.authorName}</p>
                       <p className="text-[10px] uppercase font-semibold text-primary/70 tracking-wider mt-1">
-                        {book.genre}
+                        {t(book.genre)}
                       </p>
                     </div>
                   </Link>
@@ -377,7 +379,7 @@ function BrowsePage() {
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <Clock className="w-5 h-5 text-muted-foreground" />
-                  <h2 className="text-lg font-semibold font-display">Recent Searches</h2>
+                  <h2 className="text-lg font-semibold font-display">{t("Recent Searches")}</h2>
                 </div>
                 <Button
                   variant="ghost"
@@ -388,7 +390,7 @@ function BrowsePage() {
                   }}
                   className="text-xs text-muted-foreground"
                 >
-                  Clear All
+                  {t("Clear All")}
                 </Button>
               </div>
               <div className="flex flex-wrap gap-2">
@@ -412,8 +414,8 @@ function BrowsePage() {
           <div className="flex items-center justify-between">
             <h2 className="font-medium text-muted-foreground">
               {isLoading
-                ? "Searching..."
-                : `${data?.pages?.[0]?.totalCount ?? results.length} results found`}
+                ? t("Searching...")
+                : `${data?.pages?.[0]?.totalCount ?? results.length} ${t("results found")}`}
             </h2>
           </div>
 
@@ -429,9 +431,9 @@ function BrowsePage() {
             {isFetchingNextPage ? (
               <Loader2 className="h-6 w-6 animate-spin text-primary" />
             ) : hasNextPage ? (
-              <span className="text-sm text-muted-foreground">Scroll for more</span>
+              <span className="text-sm text-muted-foreground">{t("Scroll for more")}</span>
             ) : results.length > 0 ? (
-              <span className="text-sm text-muted-foreground">You've reached the end</span>
+              <span className="text-sm text-muted-foreground">{t("You've reached the end")}</span>
             ) : null}
           </div>
         </div>
