@@ -375,7 +375,8 @@ function LibraryPage() {
                         "text-xs font-bold px-2 py-0.5 rounded-full transition-colors ml-3",
                         isActive
                           ? "bg-primary/20 text-primary"
-                          : "bg-white/10 text-muted-foreground"
+                          : "bg-white/10 text-muted-foreground",
+                        s.isCustom ? "mr-8" : ""
                       )}
                     >
                       {count}
@@ -390,7 +391,7 @@ function LibraryPage() {
                         <Button 
                           variant="ghost" 
                           size="icon" 
-                          className="absolute right-2 opacity-0 group-hover:opacity-100 transition-opacity h-8 w-8 rounded-full hover:bg-white/10 focus-visible:opacity-100 hidden md:flex"
+                          className="absolute right-2 opacity-100 md:opacity-0 group-hover:opacity-100 transition-opacity h-8 w-8 rounded-full hover:bg-white/10 focus-visible:opacity-100 flex"
                         >
                           <MoreHorizontal className="h-4 w-4" />
                         </Button>
