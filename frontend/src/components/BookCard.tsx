@@ -1,6 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import type { Book } from "@/data/books";
 import { coverStyle } from "@/lib/cover";
+import { useTranslation } from "react-i18next";
 
 interface Props {
   book: Book;
@@ -8,6 +9,7 @@ interface Props {
 }
 
 export function BookCard({ book, size = "md" }: Props) {
+  const { t } = useTranslation();
   const widths = {
     sm: "w-28",
     md: "w-36 sm:w-40",
@@ -35,7 +37,7 @@ export function BookCard({ book, size = "md" }: Props) {
         <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-background/95 via-background/20 to-background/40" />
         <div className="absolute inset-0 flex flex-col justify-between p-3 z-10">
           <div className="text-[10px] font-semibold uppercase tracking-wider text-foreground/80">
-            {book.genre}
+            {t(book.genre)}
           </div>
           <div>
             <div className="font-display text-sm font-bold leading-tight text-foreground line-clamp-3">
@@ -46,7 +48,7 @@ export function BookCard({ book, size = "md" }: Props) {
         </div>
       </div>
       <div className="mt-2 flex items-center gap-2 text-xs text-muted-foreground">
-        {book.pages > 0 && <span className="font-medium text-foreground">{book.pages} pages</span>}
+        {book.pages > 0 && <span className="font-medium text-foreground">{book.pages} {t("pages")}</span>}
         {book.pages > 0 && book.publishedYear && <span>·</span>}
         {book.publishedYear && <span>{book.publishedYear}</span>}
       </div>
