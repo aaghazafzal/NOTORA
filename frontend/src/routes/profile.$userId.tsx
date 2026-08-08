@@ -15,7 +15,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { UserPlus, Loader2, BookOpen, Clock, Edit3, Settings, Camera, Star } from "lucide-react";
+import { UserPlus, Loader2, BookOpen, Clock, Edit3, Settings, Camera, Star, Search } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useState, useEffect } from "react";
 import { useAuthStore } from "@/store/useAuthStore";
@@ -32,6 +32,83 @@ export const Route = createFileRoute("/profile/$userId")({
   component: ProfilePage,
 });
 
+function FollowListDialog({
+  isOpen,
+  onOpenChange,
+  title,
+  type,
+  profileId,
+  t
+}: {
+  isOpen: boolean;
+  onOpenChange: (open: boolean) => void;
+  title: string;
+  type: "followers" | "following";
+  profileId: string;
+  t: any;
+}) {
+  const { data: users = [], isLoading } = useQuery({
+    queryKey: [type, profileId],
+    queryFn: async () => {
+      const res = await fetch(`${import.meta.env.VITE_API_URL || "http://localhost:9090"}/api/users/${profileId}/${type}`);
+      if (!res.ok) return [];
+      return res.json();
+    },
+    enabled: isOpen && !!profileId,
+  });
+
+  const [search, setSearch] = useState("");
+
+  const filtered = users.filter((u: any) =>
+    u.name.toLowerCase().includes(search.toLowerCase())
+  );
+
+  return (
+    <Dialog open={isOpen} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-md rounded-3xl">
+        <DialogHeader>
+          <DialogTitle className="text-xl font-display font-bold">{title}</DialogTitle>
+        </DialogHeader>
+        <div className="relative mt-2">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input 
+            className="pl-9 rounded-xl bg-accent/50" 
+            placeholder={`${t("Search")}...`} 
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+        </div>
+        <div className="mt-4 max-h-[50vh] overflow-y-auto space-y-2 pr-2">
+          {isLoading ? (
+            <div className="flex justify-center p-4"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div>
+          ) : filtered.length === 0 ? (
+            <div className="text-center text-muted-foreground py-8">{t("No users found.")}</div>
+          ) : (
+            filtered.map((u: any) => (
+              <Link 
+                key={u.uid} 
+                to="/profile/$userId" 
+                params={{ userId: u.uid }}
+                onClick={() => onOpenChange(false)}
+                className="flex items-center gap-3 p-2 hover:bg-accent rounded-xl transition-colors"
+              >
+                <Avatar className="h-10 w-10">
+                  <AvatarImage src={u.photoUrl || undefined} className="object-cover" />
+                  <AvatarFallback className="bg-primary/20 text-primary">{u.name?.charAt(0).toUpperCase() || "U"}</AvatarFallback>
+                </Avatar>
+                <div className="flex flex-col">
+                  <span className="font-semibold text-sm">{u.name}</span>
+                  {u.bio && <span className="text-xs text-muted-foreground line-clamp-1">{u.bio}</span>}
+                </div>
+              </Link>
+            ))
+          )}
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 function ProfilePage() {
   const { userId } = Route.useParams();
   const navigate = useNavigate();
@@ -41,6 +118,8 @@ function ProfilePage() {
 
   // Edit State
   const [isEditing, setIsEditing] = useState(false);
+  const [showFollowers, setShowFollowers] = useState(false);
+  const [showFollowing, setShowFollowing] = useState(false);
   const [editName, setEditName] = useState("");
   const [editBio, setEditBio] = useState("");
   const [editPhoto, setEditPhoto] = useState<File | null>(null);
@@ -408,13 +487,13 @@ function ProfilePage() {
           </p>
 
           <div className="mt-6 flex gap-6 text-sm">
-            <div className="flex flex-col">
+            <div className="flex flex-col cursor-pointer hover:opacity-80 transition-opacity" onClick={() => setShowFollowers(true)}>
               <span className="font-display text-2xl font-bold">{displayFollowers}</span>
-              <span className="text-muted-foreground font-medium">Followers</span>
+              <span className="text-muted-foreground font-medium">{t("Followers")}</span>
             </div>
-            <div className="flex flex-col">
+            <div className="flex flex-col cursor-pointer hover:opacity-80 transition-opacity" onClick={() => setShowFollowing(true)}>
               <span className="font-display text-2xl font-bold">{displayFollowing}</span>
-              <span className="text-muted-foreground font-medium">Following</span>
+              <span className="text-muted-foreground font-medium">{t("Following")}</span>
             </div>
             <div className="flex flex-col">
               <span className="font-display text-2xl font-bold">{uploadedBooks.length}</span>
@@ -549,6 +628,23 @@ function ProfilePage() {
         onClose={() => setCropperOpen(false)}
         imageSrc={cropperSrc}
         onCropComplete={handleCropComplete}
+      />
+
+      <FollowListDialog 
+        isOpen={showFollowers} 
+        onOpenChange={setShowFollowers} 
+        title={t("Followers")} 
+        type="followers" 
+        profileId={profileId} 
+        t={t} 
+      />
+      <FollowListDialog 
+        isOpen={showFollowing} 
+        onOpenChange={setShowFollowing} 
+        title={t("Following")} 
+        type="following" 
+        profileId={profileId} 
+        t={t} 
       />
     </div>
   );

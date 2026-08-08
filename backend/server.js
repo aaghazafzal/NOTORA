@@ -701,8 +701,8 @@ app.post('/api/users/:uid/follow', async (req, res) => {
         } else {
             // Follow
             await Follow.create({ followerId: currentUid, followingId: targetUid });
-            await User.updateOne({ uid: targetUid }, { $inc: { followers: 1 } });
-            await User.updateOne({ uid: currentUid }, { $inc: { following: 1 } });
+            await User.updateOne({ uid: targetUid }, { $inc: { followers: 1 } }, { upsert: true });
+            await User.updateOne({ uid: currentUid }, { $inc: { following: 1 } }, { upsert: true });
             isFollowing = true;
         }
         
@@ -733,6 +733,52 @@ app.get('/api/users/:uid/recent-followers', async (req, res) => {
     } catch (err) {
         console.error('Failed to fetch recent followers:', err);
         res.status(500).json({ error: 'Failed to fetch recent followers' });
+    }
+});
+
+app.get('/api/users/:uid/followers', async (req, res) => {
+    try {
+        const Follow = dbManager.getFollowModel();
+        const User = dbManager.getUserModel();
+        const follows = await Follow.find({ followingId: req.params.uid }).sort({ createdAt: -1 });
+        
+        const followers = await Promise.all(follows.map(async (f) => {
+            const u = await User.findOne({ uid: f.followerId }).lean();
+            return {
+                uid: f.followerId,
+                name: u ? u.name : 'Unknown User',
+                photoUrl: u ? u.photoUrl : null,
+                bio: u ? u.bio : ''
+            };
+        }));
+        
+        res.json(followers);
+    } catch (err) {
+        console.error('Failed to fetch followers:', err);
+        res.status(500).json({ error: 'Failed to fetch followers' });
+    }
+});
+
+app.get('/api/users/:uid/following', async (req, res) => {
+    try {
+        const Follow = dbManager.getFollowModel();
+        const User = dbManager.getUserModel();
+        const follows = await Follow.find({ followerId: req.params.uid }).sort({ createdAt: -1 });
+        
+        const following = await Promise.all(follows.map(async (f) => {
+            const u = await User.findOne({ uid: f.followingId }).lean();
+            return {
+                uid: f.followingId,
+                name: u ? u.name : 'Unknown User',
+                photoUrl: u ? u.photoUrl : null,
+                bio: u ? u.bio : ''
+            };
+        }));
+        
+        res.json(following);
+    } catch (err) {
+        console.error('Failed to fetch following:', err);
+        res.status(500).json({ error: 'Failed to fetch following' });
     }
 });
 
