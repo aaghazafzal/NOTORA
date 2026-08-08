@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { Bell, Search, X } from "lucide-react";
 import { SidebarTrigger } from "@/components/ui/sidebar";
