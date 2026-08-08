@@ -2,6 +2,7 @@ const mongoose = require('mongoose');
 const bookSchema = require('./models/Book');
 const librarySchema = require('./models/Library');
 const userSchema = require('./models/User');
+const reviewSchema = require('./models/Review');
 
 const URIs = [
     "mongodb+srv://notora:aaghaz9431@notora.fvaoxen.mongodb.net/?appName=notora",
@@ -20,6 +21,7 @@ class MultiDBManager {
             conn.model('Book', bookSchema);
             conn.model('User', userSchema);
             conn.model('Library', librarySchema);
+            conn.model('Review', reviewSchema);
             await conn.asPromise();
             this.connections.push(conn);
             console.log(`Connected to Database ${i + 1}`);
@@ -57,6 +59,10 @@ class MultiDBManager {
 
     getLibraryModel() {
         return this.connections[0].model('Library');
+    }
+
+    getReviewModel() {
+        return this.connections[0].model('Review');
     }
 
     // Get the Book model for the currently active database (for uploads)
@@ -118,6 +124,16 @@ class MultiDBManager {
             const BookModel = conn.model('Book');
             const doc = await BookModel.findById(id);
             if (doc) return doc;
+        }
+        return null;
+    }
+
+    async updateBookByIdAcrossAll(id, updateData) {
+        for (const conn of this.connections) {
+            const BookModel = conn.model('Book');
+            // Try updating it on this connection
+            const doc = await BookModel.findByIdAndUpdate(id, updateData, { new: true });
+            if (doc) return doc; // Found and updated
         }
         return null;
     }

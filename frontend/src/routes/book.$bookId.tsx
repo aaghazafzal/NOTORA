@@ -9,9 +9,10 @@ import {
   ChevronRight,
   Compass,
   ArrowRight,
+  Star,
 } from "lucide-react";
 import { useRef, useState, useEffect } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { BookCard } from "@/components/BookCard";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -20,7 +21,51 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { coverStyle } from "@/lib/cover";
 import { useAppStore } from "@/lib/store";
 import { toast } from "sonner";
+import { Textarea } from "@/components/ui/textarea";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import type { Book } from "@/data/books";
+
+function StarRating({ 
+  rating, 
+  setRating, 
+  readonly = false,
+  size = "md"
+}: { 
+  rating: number, 
+  setRating?: (r: number) => void, 
+  readonly?: boolean,
+  size?: "sm" | "md" | "lg"
+}) {
+  const [hover, setHover] = useState(0);
+  
+  let iconSize = "h-5 w-5";
+  if (size === "sm") iconSize = "h-4 w-4";
+  if (size === "lg") iconSize = "h-6 w-6";
+
+  return (
+    <div className="flex gap-1 items-center">
+      {[1, 2, 3, 4, 5].map((star) => (
+        <button
+          key={star}
+          type="button"
+          disabled={readonly}
+          className={`${readonly ? 'cursor-default' : 'cursor-pointer'} transition-all hover:scale-110 active:scale-95`}
+          onClick={() => setRating && setRating(star)}
+          onMouseEnter={() => !readonly && setHover(star)}
+          onMouseLeave={() => !readonly && setHover(0)}
+        >
+          <Star
+            className={`${iconSize} ${
+              star <= (hover || rating)
+                ? "fill-yellow-500 text-yellow-500"
+                : "text-muted-foreground/20 dark:text-muted-foreground/30"
+            }`}
+          />
+        </button>
+      ))}
+    </div>
+  );
+}
 
 export const Route = createFileRoute("/book/$bookId")({
   loader: async ({ params }) => {
@@ -47,6 +92,8 @@ export const Route = createFileRoute("/book/$bookId")({
               formats: ["pdf"],
               chapters: [{ title: "Chapter 1", paragraphs: ["This is a preview..."] }],
               coverUrl: b.coverUrl,
+              averageRating: b.averageRating || 0,
+              ratingCount: b.ratingCount || 0,
             },
       )
       .catch(() => null);
@@ -179,8 +226,9 @@ function SimilarBooksRow({ books }: { books: Book[] }) {
 
 function BookPage() {
   const { book } = Route.useLoaderData();
+  const user = useAppStore((s) => s.user);
+  const queryClient = useQueryClient();
 
-  // Fetch similar books
   const { data: similarBooks = [] } = useQuery({
     queryKey: ["similar-books", book.id],
     queryFn: async () => {
@@ -206,9 +254,84 @@ function BookPage() {
           formats: ["pdf"],
           chapters: [],
           coverUrl: b.coverUrl,
+          averageRating: b.averageRating || 0,
+          ratingCount: b.ratingCount || 0,
         }));
     },
   });
+
+  const { data: reviews = [] } = useQuery({
+    queryKey: ["book-reviews", book.id],
+    queryFn: async () => {
+      const res = await fetch(`${import.meta.env.VITE_API_URL || "http://localhost:9090"}/api/books/${book.id}/reviews`);
+      if (!res.ok) return [];
+      return res.json();
+    },
+  });
+
+  const { data: userReview } = useQuery({
+    queryKey: ["user-review", book.id, user?.uid],
+    enabled: !!user,
+    queryFn: async () => {
+      const res = await fetch(`${import.meta.env.VITE_API_URL || "http://localhost:9090"}/api/books/${book.id}/rate`, {
+        headers: { Authorization: `Bearer ${user?.uid}` }
+      });
+      if (!res.ok) return { rating: 0, reviewText: '' };
+      return res.json();
+    },
+  });
+
+  const [rating, setRating] = useState(0);
+  const [reviewText, setReviewText] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useEffect(() => {
+    if (userReview) {
+      setRating(userReview.rating || 0);
+      setReviewText(userReview.reviewText || "");
+    }
+  }, [userReview]);
+
+  const submitReview = async () => {
+    if (!user) {
+      toast.error("Please login to submit a review");
+      return;
+    }
+    if (rating === 0) {
+      toast.error("Please select a star rating");
+      return;
+    }
+    if (reviewText.length > 300) {
+      toast.error("Review must be under 300 characters");
+      return;
+    }
+    setIsSubmitting(true);
+    try {
+      const res = await fetch(`${import.meta.env.VITE_API_URL || "http://localhost:9090"}/api/books/${book.id}/rate`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${user.uid}`
+        },
+        body: JSON.stringify({ rating, reviewText })
+      });
+      
+      if (!res.ok) throw new Error("Failed to submit review");
+      
+      const data = await res.json();
+      // Update book object in memory with new average 
+      book.averageRating = data.averageRating;
+      book.ratingCount = data.ratingCount;
+
+      toast.success("Review submitted!");
+      queryClient.invalidateQueries({ queryKey: ["book-reviews", book.id] });
+      queryClient.invalidateQueries({ queryKey: ["user-review", book.id, user.uid] });
+    } catch (err) {
+      toast.error("Error submitting review");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   const favorites = useAppStore((s) => s.shelves.favorites);
   const toggleShelf = useAppStore((s) => s.toggleShelf);
@@ -228,6 +351,12 @@ function BookPage() {
           className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:text-foreground text-muted-foreground px-6 py-3 font-medium"
         >
           Details
+        </TabsTrigger>
+        <TabsTrigger 
+          value="reviews" 
+          className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:text-foreground text-muted-foreground px-6 py-3 font-medium"
+        >
+          Reviews {book.ratingCount > 0 && <span className="ml-1 opacity-70">({book.ratingCount})</span>}
         </TabsTrigger>
       </TabsList>
       
@@ -263,6 +392,70 @@ function BookPage() {
           </dl>
         </div>
       </TabsContent>
+      
+      <TabsContent value="reviews" className="mt-6 animate-in fade-in slide-in-from-bottom-2 duration-500 space-y-8">
+        <div className="rounded-2xl border border-border bg-card/50 p-6 shadow-sm">
+          <h3 className="text-lg font-semibold mb-4 text-foreground">
+            {user ? "Write a Review" : "Login to Review"}
+          </h3>
+          <div className="space-y-4">
+            <div>
+              <StarRating rating={rating} setRating={user ? setRating : undefined} readonly={!user} size="lg" />
+            </div>
+            {user && (
+              <>
+                <div className="relative">
+                  <Textarea
+                    placeholder="What did you think of this book?"
+                    value={reviewText}
+                    onChange={(e) => setReviewText(e.target.value.substring(0, 300))}
+                    className="min-h-[100px] resize-none bg-background/50 focus-visible:ring-primary/20"
+                  />
+                  <div className={`absolute bottom-2 right-2 text-xs font-medium ${reviewText.length >= 300 ? 'text-destructive' : 'text-muted-foreground/50'}`}>
+                    {reviewText.length}/300
+                  </div>
+                </div>
+                <Button 
+                  onClick={submitReview} 
+                  disabled={isSubmitting || rating === 0}
+                  className="rounded-full neon-glow px-8"
+                >
+                  {isSubmitting ? "Submitting..." : "Submit Review"}
+                </Button>
+              </>
+            )}
+          </div>
+        </div>
+
+        <div className="space-y-6">
+          <h3 className="text-lg font-semibold text-foreground border-b border-border pb-2">Community Reviews</h3>
+          {reviews.length === 0 ? (
+            <p className="text-muted-foreground text-sm py-4 text-center">No reviews yet. Be the first to review!</p>
+          ) : (
+            <div className="space-y-6">
+              {reviews.map((r: any) => (
+                <div key={r._id} className="flex gap-4">
+                  <Avatar className="h-10 w-10 border border-border shrink-0">
+                    <AvatarFallback>{r.userName.charAt(0).toUpperCase()}</AvatarFallback>
+                  </Avatar>
+                  <div className="flex-1 space-y-1">
+                    <div className="flex items-center justify-between">
+                      <p className="font-medium text-sm text-foreground">{r.userName}</p>
+                      <span className="text-xs text-muted-foreground">{new Date(r.createdAt).toLocaleDateString()}</span>
+                    </div>
+                    <StarRating rating={r.rating} readonly size="sm" />
+                    {r.reviewText && (
+                      <p className="text-sm text-foreground/80 mt-2 leading-relaxed">
+                        {r.reviewText}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </TabsContent>
     </Tabs>
   );
 
@@ -290,6 +483,11 @@ function BookPage() {
                 {book.authorName}
               </Link>
             </p>
+            <div className="mt-2 flex items-center gap-2">
+              <StarRating rating={book.averageRating} readonly size="sm" />
+              <span className="text-xs font-medium text-foreground">{book.averageRating > 0 ? book.averageRating.toFixed(1) : "New"}</span>
+              <span className="text-xs text-muted-foreground">({book.ratingCount} reviews)</span>
+            </div>
             <div className="mt-3 flex flex-wrap gap-2 text-xs font-medium text-muted-foreground">
               {book.pages > 0 && <span>{book.pages} pages</span>}
               {book.pages > 0 && <span className="text-border">•</span>}
@@ -418,7 +616,15 @@ function BookPage() {
             {book.title}
           </h1>
           
-          <div className="mt-4 flex flex-wrap items-center gap-3 text-sm">
+          <div className="mt-4 flex items-center gap-3">
+            <StarRating rating={book.averageRating} readonly size="md" />
+            <span className="text-sm font-semibold text-foreground">{book.averageRating > 0 ? book.averageRating.toFixed(1) : "No rating"}</span>
+            <span className="text-sm text-muted-foreground hover:text-primary transition-colors cursor-pointer" onClick={() => document.querySelector('[value="reviews"]')?.dispatchEvent(new MouseEvent('click', {bubbles: true}))}>
+              ({book.ratingCount} {book.ratingCount === 1 ? 'review' : 'reviews'})
+            </span>
+          </div>
+
+          <div className="mt-5 flex flex-wrap items-center gap-3 text-sm">
             {book.pages > 0 && <span className="text-muted-foreground font-medium">{book.pages} pages</span>}
             {book.pages > 0 && <span className="text-border">•</span>}
             <span className="text-muted-foreground font-medium">

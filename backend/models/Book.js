@@ -14,6 +14,8 @@ const bookSchema = new mongoose.Schema({
     telegramPrimaryMsgId: { type: Number, required: true },
     telegramBackupMsgId: { type: Number },
     uploaderId: { type: String }, // Firebase UID of the user who uploaded this book
+    averageRating: { type: Number, default: 0 },
+    ratingCount: { type: Number, default: 0 },
     uploadDate: { type: Date, default: Date.now }
 });
 

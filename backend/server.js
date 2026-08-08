@@ -238,6 +238,82 @@ app.get('/api/books/:id', async (req, res) => {
     }
 });
 
+// --- Review Routes ---
+
+app.get('/api/books/:id/reviews', async (req, res) => {
+    try {
+        const Review = dbManager.getReviewModel();
+        const reviews = await Review.find({ bookId: req.params.id }).sort({ createdAt: -1 });
+        
+        // Populate user details for reviews
+        const User = dbManager.getUserModel();
+        const populatedReviews = await Promise.all(reviews.map(async (r) => {
+            const user = await User.findOne({ uid: r.userId }).lean();
+            return {
+                ...r.toObject(),
+                userName: user ? user.name : 'Unknown User',
+                userPhoto: user ? user.photoUrl : null
+            };
+        }));
+
+        res.json(populatedReviews);
+    } catch (err) {
+        console.error('Failed to fetch reviews:', err);
+        res.status(500).json({ error: 'Failed to fetch reviews' });
+    }
+});
+
+app.get('/api/books/:id/rate', verifyToken, async (req, res) => {
+    try {
+        const userId = req.user.uid;
+        const Review = dbManager.getReviewModel();
+        const review = await Review.findOne({ bookId: req.params.id, userId });
+        res.json(review || { rating: 0, reviewText: '' });
+    } catch (err) {
+        console.error('Failed to fetch user rating:', err);
+        res.status(500).json({ error: 'Failed to fetch user rating' });
+    }
+});
+
+app.post('/api/books/:id/rate', verifyToken, async (req, res) => {
+    try {
+        const userId = req.user.uid;
+        const bookId = req.params.id;
+        const { rating, reviewText } = req.body;
+        
+        if (rating < 1 || rating > 5) return res.status(400).json({ error: 'Rating must be between 1 and 5' });
+        
+        // Ensure review text is under limit
+        const safeText = reviewText ? reviewText.substring(0, 300) : '';
+
+        const Review = dbManager.getReviewModel();
+        
+        let existingReview = await Review.findOne({ bookId, userId });
+        if (existingReview) {
+            existingReview.rating = rating;
+            existingReview.reviewText = safeText;
+            await existingReview.save();
+        } else {
+            await new Review({ bookId, userId, rating, reviewText: safeText }).save();
+        }
+
+        // Recalculate average
+        const allReviews = await Review.find({ bookId });
+        const count = allReviews.length;
+        const averageRating = allReviews.reduce((sum, r) => sum + r.rating, 0) / count;
+
+        await dbManager.updateBookByIdAcrossAll(bookId, { 
+            averageRating: Number(averageRating.toFixed(1)), 
+            ratingCount: count 
+        });
+
+        res.json({ success: true, averageRating: Number(averageRating.toFixed(1)), ratingCount: count });
+    } catch (err) {
+        console.error('Failed to submit rating:', err);
+        res.status(500).json({ error: 'Failed to submit rating' });
+    }
+});
+
 app.get('/api/books/user/:uploaderId', async (req, res) => {
     try {
         const books = await dbManager.findBooksAcrossAll({ uploaderId: req.params.uploaderId }, { uploadDate: -1 });
