@@ -1,5 +1,6 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 import { Home, Search, Library, Upload, User, Settings, BookOpen } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import {
   Sidebar,
   SidebarContent,
@@ -13,18 +14,19 @@ import {
 } from "@/components/ui/sidebar";
 
 const main = [
-  { to: "/", label: "Home", icon: Home, exact: true },
-  { to: "/browse", label: "Browse", icon: Search },
-  { to: "/library", label: "My Library", icon: Library },
-  { to: "/upload", label: "Upload", icon: Upload },
+  { to: "/", labelKey: "Home", icon: Home, exact: true },
+  { to: "/browse", labelKey: "Browse", icon: Search },
+  { to: "/library", labelKey: "My Library", icon: Library },
+  { to: "/upload", labelKey: "Upload", icon: Upload },
 ];
 
 const account = [
-  { to: "/profile/me", label: "Profile", icon: User },
-  { to: "/settings", label: "Settings", icon: Settings },
+  { to: "/profile/me", labelKey: "Profile", icon: User },
+  { to: "/settings", labelKey: "Settings", icon: Settings },
 ];
 
 export function AppSidebar() {
+  const { t } = useTranslation();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const isActive = (to: string, exact?: boolean) =>
     exact ? pathname === to : pathname.startsWith(to);
@@ -41,7 +43,7 @@ export function AppSidebar() {
       </SidebarHeader>
       <SidebarContent>
         <SidebarGroup>
-          <SidebarGroupLabel>Discover</SidebarGroupLabel>
+          <SidebarGroupLabel>{t("Discover")}</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {main.map((it) => (
@@ -49,7 +51,7 @@ export function AppSidebar() {
                   <SidebarMenuButton asChild isActive={isActive(it.to, it.exact)}>
                     <Link to={it.to}>
                       <it.icon className="h-5 w-5" strokeWidth={2.5} />
-                      <span className="font-semibold">{it.label}</span>
+                      <span className="font-semibold">{t(it.labelKey)}</span>
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -59,7 +61,7 @@ export function AppSidebar() {
         </SidebarGroup>
 
         <SidebarGroup>
-          <SidebarGroupLabel>Account</SidebarGroupLabel>
+          <SidebarGroupLabel>{t("Account")}</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {account.map((it) => (
@@ -67,7 +69,7 @@ export function AppSidebar() {
                   <SidebarMenuButton asChild isActive={isActive(it.to)}>
                     <Link to={it.to}>
                       <it.icon className="h-5 w-5" strokeWidth={2.5} />
-                      <span className="font-semibold">{it.label}</span>
+                      <span className="font-semibold">{t(it.labelKey)}</span>
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>

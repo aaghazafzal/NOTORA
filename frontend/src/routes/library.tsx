@@ -16,6 +16,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
+import { useTranslation } from "react-i18next";
 
 export const Route = createFileRoute("/library")({
   head: () => ({
@@ -31,13 +32,14 @@ export const Route = createFileRoute("/library")({
 });
 
 const SHELVES = [
-  { id: "reading", label: "Currently Reading", icon: BookMarked },
-  { id: "favorites", label: "Favorites", icon: Heart },
-  { id: "completed", label: "Completed", icon: CheckCircle2 },
-  { id: "to-read", label: "To Read", icon: Clock },
+  { id: "reading", labelKey: "Currently Reading", icon: BookMarked },
+  { id: "favorites", labelKey: "Favorites", icon: Heart },
+  { id: "completed", labelKey: "Completed", icon: CheckCircle2 },
+  { id: "to-read", labelKey: "To Read", icon: Clock },
 ];
 
 function ShelfGrid({ books }: { books: any[] }) {
+  const { t } = useTranslation();
   if (!books || books.length === 0) {
     return (
       <div className="relative overflow-hidden rounded-3xl border border-white/5 bg-white/5 backdrop-blur-xl p-12 sm:p-16 text-center max-w-2xl mx-auto mt-6 shadow-[0_0_40px_-15px_rgba(0,0,0,0.5)]">
@@ -45,15 +47,15 @@ function ShelfGrid({ books }: { books: any[] }) {
         <div className="relative z-10 mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-white/5 border border-white/10 mb-6 shadow-inner">
           <Library className="h-10 w-10 text-muted-foreground/70" />
         </div>
-        <p className="relative z-10 font-display text-2xl font-semibold text-foreground">This shelf is empty</p>
+        <p className="relative z-10 font-display text-2xl font-semibold text-foreground">{t("This shelf is empty")}</p>
         <p className="relative z-10 mt-3 text-sm text-muted-foreground max-w-sm mx-auto">
-          Browse the library and add books to fill it up with your favorites.
+          {t("Browse the library and add books to fill it up with your favorites.")}
         </p>
         <Button
           className="relative z-10 mt-8 rounded-full bg-primary/20 hover:bg-primary/30 text-primary border border-primary/30 backdrop-blur-md transition-all hover:shadow-[0_0_20px_rgba(var(--primary),0.3)]"
           onClick={() => (window.location.href = "/browse")}
         >
-          Browse Library
+          {t("Browse Library")}
         </Button>
       </div>
     );
@@ -85,6 +87,7 @@ function ShelfGrid({ books }: { books: any[] }) {
 }
 
 function LibraryPage() {
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
   const [user, setUser] = useState<any>(auth.currentUser);
   const [authResolved, setAuthResolved] = useState(false);
@@ -130,17 +133,16 @@ function LibraryPage() {
           <LogIn className="h-12 w-12 text-primary" />
         </div>
         <h1 className="font-display text-3xl font-bold tracking-tight text-foreground">
-          Sign in to view your library
+          {t("Sign in to view your library")}
         </h1>
         <p className="mt-2 max-w-sm text-muted-foreground">
-          Keep track of your reading progress, organize your favorite books, and manage your shelves
-          across all devices.
+          {t("Keep track of your reading progress, organize your favorite books, and manage your shelves across all devices.")}
         </p>
         <Button
           className="mt-8 rounded-full px-8 shadow-lg shadow-primary/20"
           onClick={() => (window.location.href = "/login")}
         >
-          Sign In
+          {t("Sign In")}
         </Button>
       </div>
     );
@@ -189,10 +191,10 @@ function LibraryPage() {
         <div className="absolute top-0 right-0 -z-10 h-32 w-32 bg-primary/20 blur-[100px] rounded-full opacity-50" />
         <div>
           <h1 className="font-display text-4xl font-black sm:text-5xl tracking-tight text-foreground drop-shadow-sm">
-            My Library
+            {t("My Library")}
           </h1>
           <p className="mt-2 text-base text-muted-foreground">
-            Organize what you're reading and what's next.
+            {t("Organize what you're reading and what's next.")}
           </p>
         </div>
       </header>
@@ -202,7 +204,7 @@ function LibraryPage() {
         <aside className="w-full md:w-64 lg:w-72 shrink-0 flex flex-col gap-6 md:sticky md:top-24 md:h-[calc(100vh-150px)]">
           <div className="flex items-center justify-between px-2">
             <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
-              Your Shelves
+              {t("Your Shelves")}
             </h3>
             <Dialog open={open} onOpenChange={setOpen}>
               <DialogTrigger asChild>
@@ -216,21 +218,21 @@ function LibraryPage() {
               </DialogTrigger>
               <DialogContent className="rounded-3xl border-white/10 bg-zinc-950/95 backdrop-blur-xl">
                 <DialogHeader>
-                  <DialogTitle className="text-2xl font-display">Create a new shelf</DialogTitle>
+                  <DialogTitle className="text-2xl font-display">{t("Create a new shelf")}</DialogTitle>
                 </DialogHeader>
                 <div className="py-4">
                   <Input
                     autoFocus
                     value={newShelf}
                     onChange={(e) => setNewShelf(e.target.value)}
-                    placeholder="e.g. Summer reads, Book club, Sci-Fi..."
+                    placeholder={t("e.g. Summer reads, Book club, Sci-Fi...")}
                     maxLength={40}
                     className="h-12 text-lg rounded-xl border-white/10 bg-black/40 focus-visible:ring-primary/50 placeholder:text-muted-foreground/50"
                   />
                 </div>
                 <DialogFooter>
                   <Button variant="ghost" className="rounded-full hover:bg-white/5" onClick={() => setOpen(false)}>
-                    Cancel
+                    {t("Cancel")}
                   </Button>
                   <Button
                     className="rounded-full shadow-lg shadow-primary/20 transition-all hover:shadow-primary/40"

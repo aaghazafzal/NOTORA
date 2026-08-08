@@ -13,6 +13,7 @@ import { onAuthStateChanged, updateProfile } from "firebase/auth";
 import { auth } from "@/lib/firebase";
 import { cn } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useTranslation } from "react-i18next";
 
 export const Route = createFileRoute("/settings")({
   head: () => ({
@@ -31,6 +32,7 @@ const SECTIONS = [
 ];
 
 function SettingsPage() {
+  const { t, i18n } = useTranslation();
   const queryClient = useQueryClient();
   const theme = useAppStore((s) => s.theme);
   const setTheme = useAppStore((s) => s.setTheme);
@@ -74,7 +76,9 @@ function SettingsPage() {
     if (profile) {
       setName(profile.name || user?.displayName || "");
       if (profile.settings) {
-        setLanguage(profile.settings.language || "English");
+        const lang = profile.settings.language || "English";
+        setLanguage(lang);
+        i18n.changeLanguage(lang === "Hindi" ? "hi" : "en");
         setNotifications({
           newReviews: profile.settings.notifications?.newReviews ?? true,
           newFollowers: profile.settings.notifications?.newFollowers ?? true,
@@ -194,10 +198,10 @@ function SettingsPage() {
         <div className="absolute top-0 right-0 -z-10 h-32 w-32 bg-primary/20 blur-[100px] rounded-full opacity-50" />
         <div>
           <h1 className="font-display text-4xl font-black sm:text-5xl tracking-tight text-foreground drop-shadow-sm">
-            Settings
+            {t("Settings")}
           </h1>
           <p className="mt-2 text-base text-muted-foreground">
-            Tune the app to fit how you read.
+            {t("Tune the app to fit how you read.")}
           </p>
         </div>
       </header>
@@ -205,10 +209,10 @@ function SettingsPage() {
       <div className="flex justify-center">
         <main className="w-full max-w-4xl flex flex-col gap-12">
             <section className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-              <h2 className="mb-6 font-display text-2xl font-bold tracking-tight">Account</h2>
+              <h2 className="mb-6 font-display text-2xl font-bold tracking-tight">{t("Account")}</h2>
               <div className="space-y-6 rounded-3xl border border-white/10 bg-white/5 p-6 sm:p-8 backdrop-blur-xl">
                 <div className="space-y-2">
-                  <Label htmlFor="name" className="text-muted-foreground">Display name</Label>
+                  <Label htmlFor="name" className="text-muted-foreground">{t("Display name")}</Label>
                   <Input
                     id="name"
                     value={name}
@@ -218,7 +222,7 @@ function SettingsPage() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="email" className="text-muted-foreground">Email</Label>
+                  <Label htmlFor="email" className="text-muted-foreground">{t("Email")}</Label>
                   <Input
                     id="email"
                     type="email"
@@ -226,14 +230,17 @@ function SettingsPage() {
                     readOnly
                     className="h-12 rounded-xl border-white/10 bg-black/40 opacity-50 cursor-not-allowed text-base"
                   />
-                  <p className="text-xs text-muted-foreground/70">Email addresses are tied to your authentication provider.</p>
+                  <p className="text-xs text-muted-foreground/70">{t("Email addresses are tied to your authentication provider.")}</p>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="lang" className="text-muted-foreground">Language</Label>
+                  <Label htmlFor="lang" className="text-muted-foreground">{t("Language")}</Label>
                   <select
                     id="lang"
                     value={language}
-                    onChange={(e) => setLanguage(e.target.value)}
+                    onChange={(e) => {
+                      setLanguage(e.target.value);
+                      i18n.changeLanguage(e.target.value === "Hindi" ? "hi" : "en");
+                    }}
                     className="h-12 w-full rounded-xl border border-white/10 bg-black/40 px-4 text-base focus-visible:ring-1 focus-visible:ring-primary/50 focus-visible:outline-none [&>option]:bg-zinc-900"
                   >
                     <option value="English">English</option>
@@ -250,15 +257,15 @@ function SettingsPage() {
                     className="rounded-full shadow-lg shadow-primary/20 transition-all hover:shadow-primary/40 px-8"
                   >
                     {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                    Save changes
+                    {t("Save changes")}
                   </Button>
                 </div>
               </div>
             </section>
             <section className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-              <h2 className="mb-2 font-display text-2xl font-bold tracking-tight">Appearance</h2>
+              <h2 className="mb-2 font-display text-2xl font-bold tracking-tight">{t("Appearance")}</h2>
               <p className="mb-6 text-sm text-muted-foreground">
-                Pick a palette. All themes meet WCAG AA contrast.
+                {t("Pick a palette. All themes meet WCAG AA contrast.")}
               </p>
               <div className="grid gap-4 sm:grid-cols-2">
                 {THEMES.map((t) => (
@@ -287,7 +294,7 @@ function SettingsPage() {
               </div>
             </section>
             <section className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-              <h2 className="mb-6 font-display text-2xl font-bold tracking-tight">Notifications</h2>
+              <h2 className="mb-6 font-display text-2xl font-bold tracking-tight">{t("Notifications")}</h2>
               <div className="divide-y divide-white/10 rounded-3xl border border-white/10 bg-white/5 backdrop-blur-xl overflow-hidden">
                 {[
                   { id: "newReviews", label: "New reviews on my books", desc: "Get notified when someone reviews a book you authored." },
@@ -297,8 +304,8 @@ function SettingsPage() {
                 ].map((row) => (
                   <div key={row.id} className="flex items-center justify-between p-6">
                     <div className="space-y-1 pr-4">
-                      <div className="font-medium text-foreground">{row.label}</div>
-                      <div className="text-sm text-muted-foreground">{row.desc}</div>
+                      <div className="font-medium text-foreground">{t(row.label)}</div>
+                      <div className="text-sm text-muted-foreground">{t(row.desc)}</div>
                     </div>
                     <Switch 
                       checked={notifications[row.id as keyof typeof notifications]}

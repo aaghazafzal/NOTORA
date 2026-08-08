@@ -1,5 +1,6 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 import { Home, Search, Library, Upload, User } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 const items: {
   to: string;
@@ -7,14 +8,15 @@ const items: {
   icon: typeof Home;
   exact?: boolean;
 }[] = [
-  { to: "/", label: "Home", icon: Home, exact: true },
-  { to: "/browse", label: "Browse", icon: Search },
-  { to: "/library", label: "Library", icon: Library },
-  { to: "/upload", label: "Upload", icon: Upload },
-  { to: "/profile/me", label: "Profile", icon: User },
+  { to: "/", labelKey: "Home", icon: Home, exact: true },
+  { to: "/browse", labelKey: "Browse", icon: Search },
+  { to: "/library", labelKey: "Library", icon: Library },
+  { to: "/upload", labelKey: "Upload", icon: Upload },
+  { to: "/profile/me", labelKey: "Profile", icon: User },
 ];
 
 export function BottomNav() {
+  const { t } = useTranslation();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   return (
     <nav
@@ -34,7 +36,7 @@ export function BottomNav() {
                 }`}
               >
                 <Icon className="h-5 w-5" aria-hidden />
-                <span>{it.label}</span>
+                <span>{t(it.labelKey)}</span>
               </Link>
             </li>
           );
