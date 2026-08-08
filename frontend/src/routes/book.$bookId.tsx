@@ -388,6 +388,27 @@ function BookPage() {
   const toggleShelf = useAppStore((s) => s.toggleShelf);
   const isFav = favorites.includes(book.id);
 
+  const handleShare = async () => {
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: book.title,
+          text: `Check out ${book.title} by ${book.authorName} on Notora!`,
+          url: window.location.href,
+        });
+      } catch (err: any) {
+        if (err.name !== "AbortError") {
+          console.error("Error sharing", err);
+          navigator.clipboard.writeText(window.location.href);
+          toast.success("Link copied to clipboard");
+        }
+      }
+    } else if (navigator.clipboard) {
+      navigator.clipboard.writeText(window.location.href);
+      toast.success("Link copied to clipboard");
+    }
+  };
+
   const BookTabs = (
     <Tabs defaultValue="about" className="mt-8 md:mt-10">
       <TabsList className="bg-transparent border-b border-border rounded-none p-0 w-full justify-start flex-nowrap overflow-hidden">
@@ -645,12 +666,7 @@ function BookPage() {
           <Button
             variant="outline"
             className="rounded-full shadow-sm hover:bg-secondary/50"
-            onClick={() => {
-              if (typeof navigator !== "undefined" && navigator.clipboard) {
-                navigator.clipboard.writeText(window.location.href);
-              }
-              toast.success("Link copied to clipboard");
-            }}
+            onClick={handleShare}
           >
             <Share2 className="mr-2 h-4 w-4" /> Share
           </Button>
@@ -700,12 +716,7 @@ function BookPage() {
             <Button
               variant="outline"
               className="rounded-full shadow-sm hover:bg-secondary/50"
-              onClick={() => {
-                if (typeof navigator !== "undefined" && navigator.clipboard) {
-                  navigator.clipboard.writeText(window.location.href);
-                }
-                toast.success("Link copied to clipboard");
-              }}
+              onClick={handleShare}
             >
               <Share2 className="mr-2 h-4 w-4" /> Share
             </Button>
