@@ -18,7 +18,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { BookCard } from "@/components/BookCard";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { coverStyle } from "@/lib/cover";
 import { useAppStore } from "@/lib/store";
@@ -677,9 +677,12 @@ function BookPage() {
               </div>
 
               <div className="flex gap-4">
-                <Avatar className="h-10 w-10 border border-primary/20 shrink-0">
-                  <AvatarFallback className="bg-primary/10 text-primary">{user.displayName ? user.displayName.charAt(0).toUpperCase() : 'U'}</AvatarFallback>
-                </Avatar>
+                <Link to="/profile/me">
+                  <Avatar className="h-10 w-10 border border-primary/20 shrink-0 cursor-pointer hover:ring-2 hover:ring-primary/50 transition-all">
+                    <AvatarImage src={user.photoURL || undefined} className="object-cover" />
+                    <AvatarFallback className="bg-primary/10 text-primary">{user.displayName ? user.displayName.charAt(0).toUpperCase() : 'U'}</AvatarFallback>
+                  </Avatar>
+                </Link>
                 <div className="flex-1 space-y-1">
                   <div className="flex items-center justify-between mr-16">
                     <p className="font-semibold text-sm text-foreground">{t("Your Review")}</p>
@@ -699,12 +702,17 @@ function BookPage() {
             <div className="space-y-6">
               {reviews.filter((r: any) => r.userId !== user?.uid).map((r: any) => (
                 <div key={r._id} className="flex gap-4">
-                  <Avatar className="h-10 w-10 border border-border shrink-0">
-                    <AvatarFallback>{r.userName.charAt(0).toUpperCase()}</AvatarFallback>
-                  </Avatar>
+                  <Link to={`/profile/${r.userId}`}>
+                    <Avatar className="h-10 w-10 border border-border shrink-0 cursor-pointer hover:ring-2 hover:ring-primary/50 transition-all">
+                      <AvatarImage src={r.userPhoto || undefined} className="object-cover" />
+                      <AvatarFallback>{r.userName.charAt(0).toUpperCase()}</AvatarFallback>
+                    </Avatar>
+                  </Link>
                   <div className="flex-1 space-y-1">
                     <div className="flex items-center justify-between">
-                      <p className="font-medium text-sm text-foreground">{r.userName}</p>
+                      <Link to={`/profile/${r.userId}`} className="font-medium text-sm text-foreground hover:text-primary transition-colors hover:underline">
+                        {r.userName}
+                      </Link>
                       <span className="text-xs text-muted-foreground">{new Date(r.createdAt).toLocaleDateString()}</span>
                     </div>
                     <StarRating rating={r.rating} readonly size="sm" />
