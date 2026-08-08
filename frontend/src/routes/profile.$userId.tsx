@@ -60,7 +60,7 @@ function FollowListDialog({
   const [search, setSearch] = useState("");
 
   const filtered = users.filter((u: any) =>
-    u.name.toLowerCase().includes(search.toLowerCase())
+    (u.name || "Unknown User").toLowerCase().includes(search.toLowerCase())
   );
 
   return (

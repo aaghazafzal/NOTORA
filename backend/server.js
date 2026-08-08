@@ -723,9 +723,10 @@ app.get('/api/users/:uid/recent-followers', async (req, res) => {
         const followers = await Promise.all(follows.map(async (f) => {
             const u = await User.findOne({ uid: f.followerId }).lean();
             return {
-                ...f.toObject(),
-                followerName: u ? u.name : 'Unknown User',
-                followerPhoto: u ? u.photoUrl : null
+                uid: f.followerId,
+                name: (u && u.name) ? u.name : 'Unknown User',
+                photoUrl: u ? u.photoUrl : null,
+                bio: u ? u.bio : ''
             };
         }));
         
@@ -746,7 +747,7 @@ app.get('/api/users/:uid/followers', async (req, res) => {
             const u = await User.findOne({ uid: f.followerId }).lean();
             return {
                 uid: f.followerId,
-                name: u ? u.name : 'Unknown User',
+                name: (u && u.name) ? u.name : 'Unknown User',
                 photoUrl: u ? u.photoUrl : null,
                 bio: u ? u.bio : ''
             };
@@ -769,7 +770,7 @@ app.get('/api/users/:uid/following', async (req, res) => {
             const u = await User.findOne({ uid: f.followingId }).lean();
             return {
                 uid: f.followingId,
-                name: u ? u.name : 'Unknown User',
+                name: (u && u.name) ? u.name : 'Unknown User',
                 photoUrl: u ? u.photoUrl : null,
                 bio: u ? u.bio : ''
             };
